@@ -1,0 +1,31 @@
+node_modules/
+dist/
+coverage/
+.vite/
+*.log
+.DS_Store
+
+# npm only
+.pnpm-store/
+pnpm-lock.yaml
+pnpm-workspace.yaml
+yarn.lock
+
+# Local environment
+.env
+.env.*
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Agent-installed/generated assets
+.claude/skills/
+.agents/skills/
+skills-lock.json
+
+# Keep the directory but ignore temporary contents.
+.temp/*
+!.temp/.gitkeep
+
+# レビュー依頼の生成物・回収パッケージ (§8 ファイル命名規約)
+*-review.html
+*-feedback.json

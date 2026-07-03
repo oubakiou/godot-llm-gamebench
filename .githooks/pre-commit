@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+mkdir -p .temp
+temp_dir=$(mktemp -d .temp/pre-commit.XXXXXX)
+trap 'rm -rf "$temp_dir"' EXIT
+
+git diff --binary > "$temp_dir/diff-before.patch"
+
+npm run check:fix
+
+git diff --binary > "$temp_dir/diff-after.patch"
+if ! cmp -s "$temp_dir/diff-before.patch" "$temp_dir/diff-after.patch"; then
+  echo ""
+  echo "error: pre-commit hook changed files:"
+  git diff --name-only
+  echo ""
+  echo "Review the changes and stage them before committing again:"
+  echo "  git add -u && git commit"
+  exit 1
+fi
+
+npm run check
+npm run test

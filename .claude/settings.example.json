@@ -1,0 +1,11 @@
+{
+  "env": {
+    "DISABLE_AUTOUPDATER": "1"
+  },
+  "language": "japanese",
+  "autoMemoryEnabled": false,
+  "statusLine": {
+    "type": "command",
+    "command": ".claude/statusline.js"
+  }
+}

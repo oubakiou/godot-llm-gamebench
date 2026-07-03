@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": false,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
+    "types": ["node", "vitest/importMeta"]
+  },
+  "exclude": [".codex/**", ".claude/**", ".temp/**", "dist/**"],
+  "include": ["src/**/*.ts"]
+}
