@@ -1,6 +1,6 @@
 # 設計 — godot-llm-gamebench
 
-> 本書は godot-llm-gamebench の永続的な設計判断をまとめる。題材選定の経緯は `docs/plan.md`（完了後は `docs/archive/` へ移す）を参照。個別の機能追加・修正計画は `docs/feature/` / `docs/bug/` / `docs/refactoring/` に起票する。
+> 本書は godot-llm-gamebench の永続的な設計判断をまとめる。題材選定の経緯は `docs/task-selection.md`（公開時に `docs/archive/` へ移す）を参照。個別の機能追加・修正計画は `docs/feature/` / `docs/bug/` / `docs/refactoring/` に起票する。
 
 ## 1. 目的
 

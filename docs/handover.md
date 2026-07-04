@@ -68,9 +68,9 @@ node src/bench/cli.ts report
 3. （任意・マイルストーン4）Web ギャラリー: 各モデル代表ランを Godot Web エクスポートし、**別リポジトリ**の GitHub Pages へ（DESIGN.md §9-4。単一スレッドエクスポート必須、COOP/COEP 不可のため）
 4. 本リポジトリの public 化はラウンド完了後（DESIGN.md §7。公開時点でこのラウンドの仕様・テストは公開済み扱いとなり、以後の再測定はバリアント差し替え）
 
-## 未コミットの変更
+## コミット状況
 
-本プロジェクトの成果物一式（benchmarks/、src/bench/、docs/、.gitignore ほか）は**まだ一度もコミットされていない**。コミット時は AGENTS.md の規約どおり、先に delegate-review skill でレビューを通すこと。`docs/plan.md` は公開時に `docs/archive/` へ移す。`benchmarks/runs/` は gitignore 済み（session id 等を含む生データのため。集計のみコミット）。
+成果物一式は GPT-5.5 の delegate-review を通した上でコミット済み（ハーネス一式 `5dd56e2`、README・パッケージ名修正 `a639c64`。いずれも未 push）。以後もコミット時は AGENTS.md の規約どおり delegate-review を先に通すこと。`docs/task-selection.md`（旧 plan.md、題材選定の検討ログ）は公開時に `docs/archive/` へ移す。`benchmarks/runs/` は gitignore 済み（session id 等を含む生データのため。集計のみコミット）。
 
 ## 関連資料
 
