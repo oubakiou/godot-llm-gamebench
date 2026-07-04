@@ -1,118 +1,72 @@
-# typescript-agent-package-template
+# godot-llm-gamebench
 
-[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Ftypescript-agent-package-template%2Frefs%2Fheads%2Fmain%2FREADME.md)
+[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Fgodot-llm-gamebench%2Frefs%2Fheads%2Fmain%2FREADME.md)
 
 [![English](https://img.shields.io/badge/Language-English-blue?style=for-the-badge)](./README.md)
 [![日本語](https://img.shields.io/badge/言語-日本語-lightgrey?style=for-the-badge)](./README_ja.md)
 
-**A project template for safely building TypeScript / npm packages with Codex and Claude.**
+**An LLM benchmark that delegates the same Godot game implementation task to multiple vendors' CLI child models via delegate-skills, and measures the result along two axes: quality and efficiency.**
 
 ## Overview
 
-This template provides the baseline infrastructure for npm package development: TypeScript configuration, quality checks, tests, builds, agent hooks, a devcontainer, git hooks, and development documentation.
+A parent agent (Claude Code) delegates a Godot 4.x + typed GDScript implementation task to child models (Codex / Devin / Cursor / Claude) through the `delegate-implement` skill, one run per model per repetition. Each run is scored by a headless grader against hidden tests, and its wall-clock time, round trips, and token cost are recorded. The goal is to compare "model + execution-harness CLI" combinations under a fixed spec, rather than to rank model weights in isolation.
 
-The core ideas are:
+## The task: Conveyor Courier
 
-- **Centralize quality gates in npm scripts**: `npm run check`, `npm run test`, `npm run build`, and `npm run pack:check`
-- **Keep agent hooks behind thin wrappers**: Claude and Codex call `.agents/scripts/check-file.sh`; project-specific validation belongs behind that wrapper
-- **Update projects by regenerate + diff**: generate the latest template into `.temp/template-next/`, compare it with the project, and copy only the relevant infrastructure changes
+The benchmark task is **Conveyor Courier**, a custom tick-driven puzzle where packages flow across a grid and must be routed to the correctly colored exit by placing and rotating conveyor belts. It is an original spec (not a well-known game like Tetris) chosen to reduce contamination from prior training exposure, so that what's actually measured is the ability to read a spec and turn it into a correct implementation. The task prompt handed to child models is frozen at `benchmarks/tasks/conveyor-courier/prompt.md`, and the same byte-identical text is used for every model and every repetition. Hidden tests and the reference implementation are kept out of the child's workspace and are not described here.
 
-## Features
+## What gets measured
 
-| Area                       | Description                                      | Main files                                              |
-| -------------------------- | ------------------------------------------------ | ------------------------------------------------------- |
-| TypeScript                 | Strict ESM npm package setup                     | `tsconfig.json` / `tsconfig.build.json` / `src/`        |
-| format / lint / type check | Unified checks through `vite-plus` and OXC tools | `vite.config.ts` / `npm run check`                      |
-| test                       | Vitest in-source tests                           | `src/**/*.ts` / `npm run test`                          |
-| build                      | Build declarations and JavaScript into `dist/`   | `npm run build`                                         |
-| package preview            | Inspect the tarball before publishing            | `npm run pack:check`                                    |
-| Codex hook                 | Per-file check after Edit / Write                | `.codex/hooks.json` / `.codex/hooks/run-check-file.ts`  |
-| Claude hook                | Per-file check after Edit / Write                | `.claude/settings.json` / `.claude/hooks/check-file.js` |
-| shared wrappers            | Entry points for hooks and manual validation     | `.agents/scripts/*.sh`                                  |
-| pre-commit                 | check / test before commit                       | `.githooks/pre-commit`                                  |
-| devcontainer               | Node.js / GitHub CLI development environment     | `.devcontainer/devcontainer.json`                       |
-| development docs           | Setup, commands, and template update workflow    | `docs/design/development.md`                            |
+Scoring runs on two independent axes and they are never combined into one number.
 
-## Directory Layout
+- **Quality**: a 100-point rubric, all of it auto-graded headlessly — functional correctness against hidden tests (60), determinism under a fixed seed (10), type-quality warnings (15), and project/scene health such as import and boot smoke tests (15).
+- **Efficiency**: wall-clock time, delegation round trips, parent-side tokens, child-side tokens, and cost converted from per-model pricing (reported as N/A where pricing or measurement is unavailable).
+
+See [docs/design/DESIGN.md](docs/design/DESIGN.md) for the full rubric, the model roster, and the fairness/anti-cheating design. Results are not published yet; there is no results section here.
+
+## Bench commands
+
+| Command                | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| `npm run bench:run`    | Run one benchmark iteration (one model × one repetition) |
+| `npm run bench:grade`  | Re-grade a workspace against the hidden tests            |
+| `npm run bench:report` | Aggregate run results into a Markdown report             |
+
+## Directory layout
 
 ```text
 .
-├─ .agents/
-│  └─ scripts/                 # Validation wrappers shared by Codex, Claude, and humans
-├─ .claude/                    # Claude Code hooks and settings
-├─ .codex/                     # Codex hooks and config
-├─ .devcontainer/              # Development container
-├─ .githooks/                  # Git hooks
-├─ .vscode/                    # VS Code settings
+├─ src/bench/                    # Orchestrator: run / grade / report CLI (TypeScript, in-source test)
+├─ benchmarks/
+│  ├─ impressions.md             # Qualitative notes on each delegated child model
+│  ├─ tasks/conveyor-courier/
+│  │  ├─ prompt.md               # Frozen task prompt handed to child models
+│  │  ├─ reference/              # Reference implementation (Godot project, not shown to children)
+│  │  └─ hidden-tests/           # Hidden test runner (not shown to children)
+│  └─ runs/                      # Run artifacts (gitignored; only aggregate reports are committed)
 ├─ docs/
-│  ├─ archive/                 # Completed lifecycle docs
-│  ├─ bug/                     # Bug fix plan template
-│  ├─ design/                  # Durable development and design docs
-│  ├─ feature/                 # Feature plan template
-│  └─ refactoring/             # Refactoring plan template
-├─ src/                        # npm package source
-├─ .temp/                      # Temporary working files
-├─ AGENTS.md                   # Shared agent instructions
-├─ CLAUDE.md                   # Claude Code entry point
-├─ package.json
-├─ tsconfig.json
-├─ tsconfig.build.json
-└─ vite.config.ts
+│  ├─ design/DESIGN.md           # Benchmark design: spec, architecture, measurement, grading
+│  └─ design/development.md      # Development infrastructure (template-derived)
+├─ AGENTS.md / CLAUDE.md          # Agent instructions
+└─ package.json
 ```
 
-## Commands
+## Development commands
 
-| Command               | Description                                                                                                                         |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `bash local_setup.sh` | Install dependencies, agent CLIs and skills, OS packages, git hooks, and local settings. Requires `sudo`, network, and GitHub auth. |
-| `npm run check`       | format / lint / type check                                                                                                          |
-| `npm run check:fix`   | Auto-fixable checks                                                                                                                 |
-| `npm run test`        | Vitest tests                                                                                                                        |
-| `npm run build`       | Build into `dist/`                                                                                                                  |
-| `npm run pack:check`  | Run check / test / build / `npm pack --dry-run`                                                                                     |
+| Command               | Description                                                         |
+| --------------------- | ------------------------------------------------------------------- |
+| `bash local_setup.sh` | Install dependencies, agent CLIs and skills, OS packages, git hooks |
+| `npm run check`       | format / lint / type check                                          |
+| `npm run check:fix`   | Auto-fixable checks                                                 |
+| `npm run test`        | Vitest tests                                                        |
+| `npm run build`       | Build into `dist/`                                                  |
 
-## Agent Hooks
+The npm-package-template infrastructure this project is built on (agent hooks, devcontainer, pack:check, template-update workflow) is documented in [docs/design/development.md](docs/design/development.md).
 
-Claude and Codex hooks do not call `vp` or `tsc` directly after edits. They call a shared wrapper instead.
+## Documentation
 
-```text
-Claude / Codex
-  └─ PostToolUse(Edit|Write)
-      └─ .agents/scripts/check-file.sh <file>
-          └─ npm run check:fix -- <file>
-```
-
-This keeps `.claude/` and `.codex/` stable when project validation changes. Update `.agents/scripts/check-file.sh` instead.
-
-| Wrapper                          | Purpose                            |
-| -------------------------------- | ---------------------------------- |
-| `.agents/scripts/check-file.sh`  | Fast per-file feedback after edits |
-| `.agents/scripts/check-all.sh`   | Full local validation              |
-| `.agents/scripts/self-review.sh` | Pre-commit self-review helper      |
-
-## Template Update Workflow
-
-Projects created from this template should use **regenerate + diff** for template updates.
-
-1. Generate the latest template into `.temp/template-next/`.
-2. Compare it with the project root.
-3. Copy only the relevant changes from `.agents/`, `.codex/`, `.claude/`, `.githooks/`, `docs/`, and similar infrastructure files.
-4. Keep project-specific behavior in `.agents/scripts/*`.
-5. Run `npm run pack:check`.
-
-The source template is recorded in `.template.json`.
-
-## Requirements
-
-- Node.js >= 23.6
-- npm
-- Claude Code CLI when using Claude Code
-- Codex CLI when using Codex
-- Docker and a Dev Containers compatible editor when using the devcontainer
-
-## Development
-
-See [docs/design/development.md](docs/design/development.md) for setup, validation commands, hooks, and the template update workflow.
+- [docs/design/DESIGN.md](docs/design/DESIGN.md) — full benchmark design: task spec, execution architecture, measurement, grading, fairness limits
+- [docs/design/development.md](docs/design/development.md) — development setup, validation commands, agent hooks
 
 ## License
 

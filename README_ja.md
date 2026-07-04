@@ -1,118 +1,72 @@
-# typescript-agent-package-template
+# godot-llm-gamebench
 
-[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Ftypescript-agent-package-template%2Frefs%2Fheads%2Fmain%2FREADME_ja.md)
+[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Fgodot-llm-gamebench%2Frefs%2Fheads%2Fmain%2FREADME_ja.md)
 
 [![English](https://img.shields.io/badge/Language-English-lightgrey?style=for-the-badge)](./README.md)
 [![日本語](https://img.shields.io/badge/言語-日本語-blue?style=for-the-badge)](./README_ja.md)
 
-**TypeScript / npm パッケージを、Codex・Claude と協業しながら安全に開発するためのプロジェクトテンプレート。**
+**複数社の CLI 子モデル（Codex / Devin / Cursor / Claude）に delegate-skills 経由で同一の Godot ゲーム実装課題を委譲し、品質と効率の 2 軸で計測する LLM ベンチマークである。**
 
 ## 概要
 
-このテンプレートは、npm パッケージ開発に必要な TypeScript 設定、品質チェック、テスト、ビルド、エージェント向け hook、devcontainer、git hook、開発ドキュメントを最初から揃える。
+親エージェント（Claude Code）が `delegate-implement` skill を使い、Godot 4.x + Typed GDScript による実装課題を子モデル（Codex / Devin / Cursor / Claude）へ委譲する。1 ラン = 1 モデル × 1 反復とし、各ランを headless な採点器で隠しテストに対して採点し、所要時間・往復回数・トークンコストを併せて記録する。単体のモデル性能を序列化するのではなく、固定仕様下での「モデル + 実行系 CLI ハーネス」の組み合わせを比較することが目的である。
 
-中心になる考え方は次の 3 つ:
+## 課題: Conveyor Courier
 
-- **品質ゲートを npm scripts に集約**: `npm run check`、`npm run test`、`npm run build`、`npm run pack:check`
-- **エージェント hook は薄い wrapper 経由**: Claude / Codex は `.agents/scripts/check-file.sh` を呼ぶだけにし、プロジェクト固有の検証は wrapper 側へ寄せる
-- **テンプレート更新は再生成 + diff**: 最新テンプレートを `.temp/template-next/` などへ生成し、必要な差分だけ既存プロジェクトへ取り込む
+課題は tick 駆動のパズル「Conveyor Courier」である。グリッド上を流れる荷物を、ベルトの設置・回転で正しい色の出口へ運ぶ。テトリスのような有名ゲームではなく独自仕様にすることで学習汚染を軽減し、「仕様を読んで抽象化・実装する力」そのものを測る狙いがある。子モデルへ渡す課題文の正本は `benchmarks/tasks/conveyor-courier/prompt.md` であり、全モデル・全反復で byte 一致のまま渡す。隠しテストとリファレンス実装は子モデルの作業場所には置かれず、本書でも内容には触れない。
 
-## 機能一覧
+## 計測の 2 軸
 
-| 項目                       | 内容                                          | 主なファイル                                            |
-| -------------------------- | --------------------------------------------- | ------------------------------------------------------- |
-| TypeScript                 | strict な ESM npm パッケージ構成              | `tsconfig.json` / `tsconfig.build.json` / `src/`        |
-| format / lint / type check | `vite-plus` と OXC 系ツールによる一括チェック | `vite.config.ts` / `npm run check`                      |
-| test                       | Vitest による in-source test                  | `src/**/*.ts` / `npm run test`                          |
-| build                      | `dist/` への型定義付きビルド                  | `npm run build`                                         |
-| package preview            | publish 前の tarball 確認                     | `npm run pack:check`                                    |
-| Codex hook                 | Edit / Write 後のファイル単位チェック         | `.codex/hooks.json` / `.codex/hooks/run-check-file.ts`  |
-| Claude hook                | Edit / Write 後のファイル単位チェック         | `.claude/settings.json` / `.claude/hooks/check-file.js` |
-| 共通 wrapper               | hook や手動検証の入口                         | `.agents/scripts/*.sh`                                  |
-| pre-commit                 | commit 前の check / test                      | `.githooks/pre-commit`                                  |
-| devcontainer               | Node.js / GitHub CLI 入り開発環境             | `.devcontainer/devcontainer.json`                       |
-| 開発ドキュメント           | セットアップ、コマンド、更新運用              | `docs/design/development.md`                            |
+採点は 2 つの独立した軸で行い、両者を 1 つのスコアに合成しない。
+
+- **品質**: 100 点満点のルーブリックで、全項目を自動採点する。隠しテストに対する機能正当性（60 点）、固定 seed 下の決定性（10 点）、型警告の少なさ（15 点）、import・起動 smoke などのプロジェクト健全性（15 点）
+- **効率**: 所要時間、委譲往復回数、親側消費トークン、子側消費トークン、単価表による換算コスト（単価・実測値がない場合は N/A として報告する）
+
+ルーブリックの詳細、対象モデル一覧、公平性・カンニング防止の設計は [docs/design/DESIGN.md](docs/design/DESIGN.md) を参照。計測結果はまだ無いため、本書に結果セクションは無い。
+
+## bench コマンド
+
+| コマンド               | 説明                                           |
+| ---------------------- | ---------------------------------------------- |
+| `npm run bench:run`    | ベンチを 1 ラン実行する（1 モデル × 1 反復）   |
+| `npm run bench:grade`  | workspace を隠しテストで再採点する             |
+| `npm run bench:report` | ラン結果を集計して Markdown レポートを生成する |
 
 ## ディレクトリ構成
 
 ```text
 .
-├─ .agents/
-│  └─ scripts/                 # Codex / Claude / 人間が共有する検証 wrapper
-├─ .claude/                    # Claude Code 用 hook / settings
-├─ .codex/                     # Codex 用 hook / config
-├─ .devcontainer/              # 開発コンテナ
-├─ .githooks/                  # git hooks
-├─ .vscode/                    # VS Code 設定
+├─ src/bench/                    # orchestrator: run / grade / report CLI（TypeScript, in-source test）
+├─ benchmarks/
+│  ├─ impressions.md             # 委譲先モデルの定性所感
+│  ├─ tasks/conveyor-courier/
+│  │  ├─ prompt.md               # 子モデルへ渡す課題文の正本（凍結済み）
+│  │  ├─ reference/              # リファレンス実装（Godot プロジェクト。子モデルには渡さない）
+│  │  └─ hidden-tests/           # 隠しテスト（子モデルには渡さない）
+│  └─ runs/                      # ラン成果物（gitignore。集計レポートのみコミット）
 ├─ docs/
-│  ├─ archive/                 # 完了した寿命付きドキュメント
-│  ├─ bug/                     # バグ修正プランテンプレート
-│  ├─ design/                  # 永続的な開発・設計ドキュメント
-│  ├─ feature/                 # 設計・実装プランテンプレート
-│  └─ refactoring/             # リファクタリング計画テンプレート
-├─ src/                        # npm パッケージ本体
-├─ .temp/                      # 一時ファイル置き場
-├─ AGENTS.md                   # エージェント共通指示
-├─ CLAUDE.md                   # Claude Code 向け入口
-├─ package.json
-├─ tsconfig.json
-├─ tsconfig.build.json
-└─ vite.config.ts
+│  ├─ design/DESIGN.md           # ベンチ設計（課題仕様、実行アーキテクチャ、計測・採点）
+│  └─ design/development.md      # 開発基盤（テンプレート由来）
+├─ AGENTS.md / CLAUDE.md          # エージェント向け指示
+└─ package.json
 ```
 
-## コマンド
+## 開発コマンド
 
-| コマンド              | 説明                                                            |
-| --------------------- | --------------------------------------------------------------- |
-| `bash local_setup.sh` | 依存関係のインストール、git hook 設定、`CLAUDE.local.md` 初期化 |
-| `npm run check`       | format / lint / type check                                      |
-| `npm run check:fix`   | 自動修正付き check                                              |
-| `npm run test`        | Vitest テスト                                                   |
-| `npm run build`       | `dist/` へビルド                                                |
-| `npm run pack:check`  | check / test / build / `npm pack --dry-run` をまとめて実行      |
+| コマンド              | 説明                                                                   |
+| --------------------- | ---------------------------------------------------------------------- |
+| `bash local_setup.sh` | 依存関係、エージェント CLI・skill、OS package、git hook のセットアップ |
+| `npm run check`       | format / lint / type check                                             |
+| `npm run check:fix`   | 自動修正付き check                                                     |
+| `npm run test`        | Vitest テスト                                                          |
+| `npm run build`       | `dist/` へビルド                                                       |
 
-## エージェント hook
+本プロジェクトが基盤とする npm パッケージテンプレート由来の開発基盤（エージェント hook、devcontainer、pack:check、テンプレート更新運用）は [docs/design/development.md](docs/design/development.md) に記載する。
 
-Claude / Codex の hook は、編集後に直接 `vp` や `tsc` を呼ばず、共通 wrapper を呼ぶ。
+## ドキュメント
 
-```text
-Claude / Codex
-  └─ PostToolUse(Edit|Write)
-      └─ .agents/scripts/check-file.sh <file>
-          └─ npm run check:fix -- <file>
-```
-
-この構成により、将来チェック内容を変える場合も `.claude/` や `.codex/` を触らず `.agents/scripts/check-file.sh` を更新すればよい。
-
-| wrapper                          | 用途                                 |
-| -------------------------------- | ------------------------------------ |
-| `.agents/scripts/check-file.sh`  | 編集直後の軽量なファイル単位チェック |
-| `.agents/scripts/check-all.sh`   | ローカルの総合検証                   |
-| `.agents/scripts/self-review.sh` | commit 前のセルフレビュー補助        |
-
-## テンプレート更新運用
-
-このテンプレートから作成したプロジェクトでは、更新取り込みに **再生成 + diff** を使う。
-
-1. 最新テンプレートを `.temp/template-next/` などへ生成する
-2. 既存プロジェクトと diff を取る
-3. `.agents/`、`.codex/`、`.claude/`、`.githooks/`、`docs/` などの必要差分だけ取り込む
-4. プロジェクト固有の挙動は `.agents/scripts/*` に残す
-5. `npm run pack:check` で検証する
-
-生成元テンプレートは `.template.json` に記録する。
-
-## 前提条件
-
-- Node.js >= 23.6
-- npm
-- Claude Code を使う場合: Claude Code CLI
-- Codex を使う場合: Codex CLI
-- devcontainer を使う場合: Docker / Dev Containers 対応エディタ
-
-## 開発
-
-セットアップ、検証コマンド、hook、テンプレート更新運用の詳細は [docs/design/development.md](docs/design/development.md) を参照。
+- [docs/design/DESIGN.md](docs/design/DESIGN.md) — ベンチ設計の全体（課題仕様、実行アーキテクチャ、計測、採点、公平性の限界）
+- [docs/design/development.md](docs/design/development.md) — 開発セットアップ、検証コマンド、エージェント hook
 
 ## ライセンス
 

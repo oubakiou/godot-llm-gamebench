@@ -1,7 +1,7 @@
 {
-  "name": "typescript-agent-package-template",
+  "name": "godot-llm-gamebench",
   "version": "0.1.0",
-  "description": "Template for TypeScript npm packages with Codex/Claude project automation.",
+  "description": "LLM benchmark that delegates a Godot game implementation task to multiple vendors' CLI models and grades quality and efficiency.",
   "license": "MIT",
   "files": [
     "dist"
