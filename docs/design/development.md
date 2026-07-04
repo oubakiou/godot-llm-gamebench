@@ -62,7 +62,7 @@ if (import.meta.vitest) {
 
 永続的な設計判断は [DESIGN.md](./DESIGN.md) に集約する。ビルドと package 出力の詳細は [build-pipeline.md](./build-pipeline.md)、今後の方向性は [roadmap.md](./roadmap.md) を参照。
 
-- [DESIGN.md](./DESIGN.md) — アーキテクチャ、品質ゲート、エージェント hook、ドキュメント運用
+- [DESIGN.md](./DESIGN.md) — ベンチマーク設計（課題仕様、実行アーキテクチャ、計測・採点）と開発基盤
 - [build-pipeline.md](./build-pipeline.md) — TypeScript build、`dist/`、npm tarball
 - [roadmap.md](./roadmap.md) — テンプレート改善の候補
 

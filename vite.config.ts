@@ -21,9 +21,23 @@ export default {
       'capitalized-comments': 'off',
       'no-magic-numbers': 'off',
       'oxc/no-async-await': 'off',
+      // Bench orchestration is CLI-heavy and integrates untyped external JSON/process output.
+      // These style-only rules obscure the failure modes that matter for this package.
+      'oxc/no-optional-chaining': 'off',
       'oxc/no-rest-spread-properties': 'off',
       'sort-imports': 'off',
+      'typescript/no-unnecessary-type-parameters': 'off',
+      'typescript/no-unsafe-type-assertion': 'off',
       'unicorn/no-null': 'off',
+      'unicorn/no-array-reduce': 'off',
+      'unicorn/import-style': 'off',
+      'id-length': 'off',
+      'sort-keys': 'off',
+      'no-console': 'off',
+      'no-ternary': 'off',
+      'no-undefined': 'off',
+      'max-statements': 'off',
+      'prefer-destructuring': 'off',
     },
   },
   test: {

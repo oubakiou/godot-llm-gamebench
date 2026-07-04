@@ -29,3 +29,9 @@ skills-lock.json
 # レビュー依頼の生成物・回収パッケージ (§8 ファイル命名規約)
 *-review.html
 *-feedback.json
+
+# ラン成果物（session id やローカルパスを含む生データ。集計レポートのみ手動でコミットする）
+benchmarks/runs/
+
+# Godot エディタキャッシュ（機体ローカルの実行パス等を含む生成物）
+**/.godot/
