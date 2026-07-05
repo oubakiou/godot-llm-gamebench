@@ -12,6 +12,7 @@ interface PriceRow {
 
 interface RunSummary {
   model: string
+  outcome: Metrics['outcome']
   quality: number
   wallClockMs: number
   roundTrips: number
@@ -95,12 +96,17 @@ const loadRuns = (): RunSummary[] => {
       if (metrics === null || grade === null) {
         return []
       }
+      // haiku はハーネス検証専用（DESIGN §8）。ベンチ集計から除外する
+      if (metrics.model === 'haiku') {
+        return []
+      }
       const childCost = calculateChildCost(metrics, prices)
       const parentCost = metrics.parent_tokens.cost_usd
       return [
         {
           childTokens: metrics.child_tokens.input + metrics.child_tokens.output,
           model: metrics.model,
+          outcome: metrics.outcome,
           quality: grade.score.total,
           roundTrips: metrics.round_trips,
           totalCostUsd: childCost === null || parentCost === null ? null : childCost + parentCost,
@@ -118,21 +124,36 @@ export const buildReportMarkdown = (runs: RunSummary[] = loadRuns()): string => 
   const rows = [...byModel.entries()]
     .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([model, modelRuns]) => {
-      const costs = modelRuns.map((run) => run.totalCostUsd).filter((value) => value !== null)
-      const costMedian = costs.length === modelRuns.length ? median(costs) : null
+      // 中央値は completed ランのみで計算する（打ち切りランの残存値や null を混ぜない）。
+      // 非 completed は試行数と内訳（信頼性メトリクス）として別列で報告する
+      const completed = modelRuns.filter((run) => run.outcome === 'completed')
+      const nonCompleted = modelRuns.filter((run) => run.outcome !== 'completed')
+      const breakdown =
+        nonCompleted.length === 0
+          ? '-'
+          : ['stalled', 'timeout', 'failed']
+              .map((outcome) => [outcome, nonCompleted.filter((run) => run.outcome === outcome)])
+              .filter(
+                (pair): pair is [string, RunSummary[]] => (pair[1] as RunSummary[]).length > 0
+              )
+              .map(([outcome, runsOf]) => `${String(runsOf.length)} ${outcome}`)
+              .join(', ')
+      const costs = completed.map((run) => run.totalCostUsd).filter((value) => value !== null)
+      const costMedian = costs.length === completed.length ? median(costs) : null
       return [
         model,
-        String(modelRuns.length),
-        fmt(median(modelRuns.map((run) => run.quality))),
-        fmt(median(modelRuns.map((run) => run.wallClockMs / 1000)), 1),
-        fmt(median(modelRuns.map((run) => run.roundTrips)), 1),
-        fmt(median(modelRuns.map((run) => run.childTokens)), 0),
+        `${String(completed.length)}/${String(modelRuns.length)}`,
+        fmt(median(completed.map((run) => run.quality))),
+        fmt(median(completed.map((run) => run.wallClockMs / 1000)), 1),
+        fmt(median(completed.map((run) => run.roundTrips)), 1),
+        fmt(median(completed.map((run) => run.childTokens)), 0),
         fmt(costMedian, 4),
+        breakdown,
       ]
     })
   return [
-    '| Model | Runs | Quality median | Seconds median | Round trips median | Child tokens median | Cost median USD |',
-    '| --- | ---: | ---: | ---: | ---: | ---: | ---: |',
+    '| Model | Completed/Attempts | Quality median | Seconds median | Round trips median | Child tokens median | Total cost median USD | Non-completed |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
     ...rows.map((row) => `| ${row.join(' | ')} |`),
   ].join('\n')
 }
@@ -146,6 +167,7 @@ if (import.meta.vitest) {
         {
           childTokens: 100,
           model: 'b',
+          outcome: 'completed',
           quality: 10,
           roundTrips: 1,
           totalCostUsd: 0.1,
@@ -154,22 +176,33 @@ if (import.meta.vitest) {
         {
           childTokens: 300,
           model: 'b',
+          outcome: 'completed',
           quality: 30,
           roundTrips: 3,
           totalCostUsd: 0.3,
           wallClockMs: 3000,
         },
         {
+          childTokens: 999,
+          model: 'b',
+          outcome: 'stalled',
+          quality: 99,
+          roundTrips: 9,
+          totalCostUsd: null,
+          wallClockMs: 9000,
+        },
+        {
           childTokens: 200,
           model: 'a',
+          outcome: 'completed',
           quality: 20,
           roundTrips: 2,
           totalCostUsd: null,
           wallClockMs: 2000,
         },
       ])
-      expect(markdown).toContain('| a | 1 | 20.00 | 2.0 | 2.0 | 200 | N/A |')
-      expect(markdown).toContain('| b | 2 | 20.00 | 2.0 | 2.0 | 200 | 0.2000 |')
+      expect(markdown).toContain('| a | 1/1 | 20.00 | 2.0 | 2.0 | 200 | N/A | - |')
+      expect(markdown).toContain('| b | 2/3 | 20.00 | 2.0 | 2.0 | 200 | 0.2000 | 1 stalled |')
     })
   })
 }

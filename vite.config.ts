@@ -41,7 +41,8 @@ export default {
     },
   },
   test: {
-    exclude: ['**/node_modules/**', '**/.git/**', '.temp/**', 'dist/**'],
+    // benchmarks/runs はラン成果物置き場。子 CLI の隔離ホームに他所のテストファイルが残るため除外必須
+    exclude: ['**/node_modules/**', '**/.git/**', '.temp/**', 'dist/**', 'benchmarks/**'],
     includeSource: ['src/**/*.ts'],
   },
 }

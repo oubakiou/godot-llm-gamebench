@@ -71,18 +71,36 @@ export const extractParentTokens = (parentResult: JsonRecord): ParentTokens => {
   }
 }
 
+// 子プロセスが一時ファイルを書き捨てる領域を走査するため、
+// readdir / stat と削除が競合してエントリが消えることは常に起こり得る（握りつぶして続行する）
 const walkFiles = (dir: string): string[] => {
-  if (!existsSync(dir)) {
+  try {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) {
+        return walkFiles(path)
+      }
+      return [path]
+    })
+  } catch {
     return []
   }
-  const entries = readdirSync(dir, { withFileTypes: true })
-  return entries.flatMap((entry) => {
-    const path = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      return walkFiles(path)
-    }
-    return [path]
-  })
+}
+
+const statSizeOrZero = (file: string): number => {
+  try {
+    return statSync(file).size
+  } catch {
+    return 0
+  }
+}
+
+const statMtimeOrZero = (file: string): number => {
+  try {
+    return statSync(file).mtimeMs
+  } catch {
+    return 0
+  }
 }
 
 const estimatedTokensFromDelegate = (delegateMetricsJsonl: string): ChildTokens => {
@@ -174,15 +192,14 @@ export const latestMtimeMs = (dir: string): number => {
   if (!existsSync(dir)) {
     return 0
   }
-  const self = statSync(dir).mtimeMs
-  return Math.max(self, ...walkFiles(dir).map((file) => statSync(file).mtimeMs))
+  return Math.max(statMtimeOrZero(dir), ...walkFiles(dir).map(statMtimeOrZero))
 }
 
 export const sumFileSizes = (dir: string): number => {
   if (!existsSync(dir)) {
     return 0
   }
-  return walkFiles(dir).reduce((sum, file) => sum + statSync(file).size, 0)
+  return walkFiles(dir).reduce((sum, file) => sum + statSizeOrZero(file), 0)
 }
 
 export const buildMetrics = (args: {
