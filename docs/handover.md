@@ -47,6 +47,7 @@ node src/bench/cli.ts report
 | 5   | `swe-1.6`         | Devin  | ID 実在確認済み                                                                                        |
 | 6   | `claude-sonnet-5` | Claude | フル ID 必須（エイリアス sonnet-5 は CLI 2.1.187 未対応。素の sonnet は 4.6 に解決されるので使わない） |
 | 7   | `claude-opus-4-8` | Claude | フル ID 必須（エイリアスの解決先は CLI 更新で変わり得る）。ID 実在確認済み（2026-07-05）               |
+| 8   | `fable-direct`    | なし   | ベースライン条件（親 Fable の直接実装、委譲なし。DESIGN §2 ※）。枠消費最大のため最後                   |
 
 - 並列実行しない（親が同一 Claude 枠を消費し、負荷で時間計測が歪む）
 - 各ラン完了時に `metrics.json` の `outcome` を確認。`stalled` / `timeout` / `failed` のランは 1 回だけ再実行してよいが、失敗ランの run ディレクトリと metrics は破棄せず残す（停滞率・失敗率も報告対象）
@@ -64,7 +65,7 @@ node src/bench/cli.ts report
 
 ## 再開後の残作業
 
-1. 本計測 21 ラン（上記順、Sonnet5 → Opus4.8 を最後）→ `report` で集計 → 結果を docs へ（品質スコア中央値 + 効率 Pareto + ハーネス交絡・停滞率の注記。DESIGN.md §5〜§7）
+1. 本計測 24 ラン（上記順、Sonnet5 → Opus4.8 → fable-direct を最後）→ `report` で集計 → 結果を docs へ（品質スコア中央値 + 効率 Pareto + ハーネス交絡・停滞率の注記。DESIGN.md §5〜§7）
 2. 委譲のたびに `benchmarks/impressions.md` へ定性所感を追記する（ユーザー依頼による運用）
 3. （任意・マイルストーン4）Web ギャラリー: 各モデル代表ランを Godot Web エクスポートし、**別リポジトリ**の GitHub Pages へ（DESIGN.md §9-4。単一スレッドエクスポート必須、COOP/COEP 不可のため）
 4. 本リポジトリの public 化はラウンド完了後（DESIGN.md §7。公開時点でこのラウンドの仕様・テストは公開済み扱いとなり、以後の再測定はバリアント差し替え）

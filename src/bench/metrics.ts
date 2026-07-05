@@ -13,6 +13,10 @@ import type { ChildTokens, Metrics, ParentTokens } from './types.ts'
 type JsonRecord = Record<string, unknown>
 
 export const backendForModel = (model: string): string => {
+  // fable-direct は委譲なしベースライン（親自身が実装）。子プロセスを持たない
+  if (model === 'fable-direct') {
+    return 'direct'
+  }
   if (model.startsWith('gpt')) {
     return 'codex'
   }
@@ -159,6 +163,10 @@ export const collectChildTokens = (
   delegateMetricsJsonl: string,
   backend: string
 ): ChildTokens => {
+  if (backend === 'direct') {
+    // 子が存在しない条件なので 0 は真の実測値（全消費は parent_tokens 側に計上される）
+    return { cost_usd: 0, input: 0, measurement: 'measured', output: 0 }
+  }
   const observeUsage = usageFromObserveFiles(delegateWorkDir)
   if (observeUsage !== null && observeUsage.measurement === 'measured') {
     return observeUsage
@@ -242,6 +250,16 @@ if (import.meta.vitest) {
       expect(backendForModel('devin-glm-5.2')).toBe('devin')
       expect(backendForModel('composer-2.5')).toBe('cursor')
       expect(backendForModel('sonnet-5')).toBe('claude')
+      expect(backendForModel('fable-direct')).toBe('direct')
+    })
+
+    it('reports zero measured child tokens for the direct baseline', () => {
+      expect(collectChildTokens('/nonexistent', '/nonexistent.jsonl', 'direct')).toEqual({
+        cost_usd: 0,
+        input: 0,
+        measurement: 'measured',
+        output: 0,
+      })
     })
 
     it('prefers measured usage from observe json and sums round trips', () => {

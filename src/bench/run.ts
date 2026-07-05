@@ -37,6 +37,15 @@ If dispatch returns without a response_file, poll for the file for up to 3 minut
 round trip.
 When finished, respond with exactly one word: completed or failed.`
 
+// ベースライン条件: 委譲プロトコルを使わず、親モデル自身が直接実装する
+const directPlaybook = `Read TASK.md and implement it yourself in this workspace.
+Do NOT delegate: no delegate skills, no subagents. Write all code directly.
+Verify the public acceptance criteria in TASK.md yourself before finishing.
+When finished, respond with exactly one word: completed or failed.`
+
+// 直接実装ベースラインの擬似モデル ID（実体は親と同じ claude-fable-5）
+export const DIRECT_MODEL = 'fable-direct'
+
 interface RunArgs {
   model: string
   rep: number
@@ -58,18 +67,22 @@ const writeJson = (path: string, value: unknown): void => {
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`)
 }
 
-const initWorkspace = (runDir: string): string => {
+const initWorkspace = (runDir: string, direct: boolean): string => {
   const workspace = join(runDir, 'workspace')
   mkdirSync(workspace, { recursive: true })
   copyFileSync(promptPath, join(workspace, 'TASK.md'))
-  mkdirSync(join(workspace, '.claude/skills'), { recursive: true })
-  cpSync(delegateSkillPath, join(workspace, '.claude/skills/delegate-implement'), {
-    recursive: true,
-  })
-  writeFileSync(
-    join(workspace, 'CLAUDE.md'),
-    '実装タスクは delegate-implement skill で委譲する。\n'
-  )
+  if (direct) {
+    writeFileSync(join(workspace, 'CLAUDE.md'), '実装タスクはこの workspace 内で直接行う。\n')
+  } else {
+    mkdirSync(join(workspace, '.claude/skills'), { recursive: true })
+    cpSync(delegateSkillPath, join(workspace, '.claude/skills/delegate-implement'), {
+      recursive: true,
+    })
+    writeFileSync(
+      join(workspace, 'CLAUDE.md'),
+      '実装タスクは delegate-implement skill で委譲する。\n'
+    )
+  }
   spawnSync('git', ['init'], { cwd: workspace, stdio: 'ignore' })
   return workspace
 }
@@ -186,11 +199,19 @@ const runParent = async (args: {
     const metricsFile = join(delegateDir, 'metrics.jsonl')
     const workDir = join(delegateDir, 'work')
     mkdirSync(workDir, { recursive: true })
+    const direct = args.model === DIRECT_MODEL
+    const delegateEnv = direct
+      ? {}
+      : {
+          DELEGATE_IMPLEMENT_MODEL: args.model,
+          DELEGATE_METRICS_FILE: metricsFile,
+          DELEGATE_WORK_DIR: workDir,
+        }
     const child = spawn(
       'claude',
       [
         '-p',
-        parentPlaybook,
+        direct ? directPlaybook : parentPlaybook,
         '--model',
         'claude-fable-5',
         '--output-format',
@@ -205,9 +226,7 @@ const runParent = async (args: {
           // Bash ツールの timeout 上限を watchdog の絶対上限と揃えて引き上げる
           BASH_DEFAULT_TIMEOUT_MS: '2400000',
           BASH_MAX_TIMEOUT_MS: '2400000',
-          DELEGATE_IMPLEMENT_MODEL: args.model,
-          DELEGATE_METRICS_FILE: metricsFile,
-          DELEGATE_WORK_DIR: workDir,
+          ...delegateEnv,
         },
         stdio: ['ignore', 'pipe', 'pipe'],
       }
@@ -261,13 +280,14 @@ export const runBenchmark = async (
   const runDir = join(runsRoot, runId)
   rmSync(runDir, { force: true, recursive: true })
   mkdirSync(join(runDir, 'delegate/work'), { recursive: true })
-  const workspace = initWorkspace(runDir)
+  const direct = args.model === DIRECT_MODEL
+  const workspace = initWorkspace(runDir, direct)
   const metricsFile = join(runDir, 'delegate/metrics.jsonl')
   const delegateWorkDir = join(runDir, 'delegate/work')
   const parentCommand = [
     'claude',
     '-p',
-    parentPlaybook,
+    direct ? directPlaybook : parentPlaybook,
     '--model',
     'claude-fable-5',
     '--output-format',
@@ -281,11 +301,13 @@ export const runBenchmark = async (
     writeJson(join(runDir, 'dry-run-command.json'), {
       command: parentCommand,
       cwd: workspace,
-      env: {
-        DELEGATE_IMPLEMENT_MODEL: args.model,
-        DELEGATE_METRICS_FILE: metricsFile,
-        DELEGATE_WORK_DIR: delegateWorkDir,
-      },
+      env: direct
+        ? {}
+        : {
+            DELEGATE_IMPLEMENT_MODEL: args.model,
+            DELEGATE_METRICS_FILE: metricsFile,
+            DELEGATE_WORK_DIR: delegateWorkDir,
+          },
     })
     writeFileSync(metricsFile, '')
   } else {
