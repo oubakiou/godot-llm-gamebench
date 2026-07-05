@@ -35,6 +35,10 @@
 
 - 未使用。`cursor-agent --list-models` で ID 実在は確認済み
 
+## claude-sonnet-5 / claude-opus-4-8（Claude CLI）
+
+- 未使用。フル ID でのスモーク応答は確認済み（sonnet-5: 2026-07-04、opus-4-8: 2026-07-05）。ベンチ実行順は全モデルの最後（Sonnet5 → Opus4.8）
+
 ## ハーネス側の注意（モデル所感ではないが委譲品質に影響）
 
 - **Claude 実行系の子は停滞リスクが恒常的にある**: sonnet（4.6）で 2 回、haiku の E2E rep3 でも 1 回観測（レート制限解除直後にもかかわらず、実装の大半を書いた後 17 分以上無出力で停滞 → watchdog の 40 分絶対上限で timeout 打ち切り）。timeout 打ち切り→残存成果物の採点→metrics 記録の経路は rep3 で実地検証済み。なお SIGKILL 打ち切りでは親の usage が取得できず parent_tokens は null になる

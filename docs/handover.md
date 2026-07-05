@@ -20,7 +20,7 @@
 
 1. **本計測の開始はユーザーの合図があってから**（タスク #7）。開始方式は未決定: パイロット 1 ラン（推奨）か全ラン一括かを開始時に確認する
 2. 天井効果（haiku がほぼ満点 = 品質軸の圧縮）は**対応せずこのまま測る**。品質＋効率の 2 軸報告で差を見る
-3. **Sonnet5 は他 5 モデルの 15 ラン完了後、すぐ続けて実行**。ただし Claude 実行系は枠逼迫時に停滞するため（下記）、枠に余裕がある時間帯に流すこと
+3. **Claude 実行系の 2 モデル（Sonnet5 → Opus4.8 の順、Opus4.8 が最後）は他 5 モデルの 15 ラン完了後、すぐ続けて実行**。ただし Claude 実行系は枠逼迫時に停滞するため（下記）、枠に余裕がある時間帯に流すこと
 4. 計測期間中は CLI / skill / Godot のバージョンを固定（claude 2.1.200 / codex 0.142.3 / devin 2026.8.18 / cursor-agent 2026.07.01 / godot 4.4.1 / delegate-skills v0.6.0。claude / codex は package.json の exact 指定で固定）
 
 ## 実行手順
@@ -46,6 +46,7 @@ node src/bench/cli.ts report
 | 4   | `composer-2.5`    | Cursor | ID 実在確認済み                                                                                        |
 | 5   | `swe-1.6`         | Devin  | ID 実在確認済み                                                                                        |
 | 6   | `claude-sonnet-5` | Claude | フル ID 必須（エイリアス sonnet-5 は CLI 2.1.187 未対応。素の sonnet は 4.6 に解決されるので使わない） |
+| 7   | `claude-opus-4-8` | Claude | フル ID 必須（エイリアスの解決先は CLI 更新で変わり得る）。ID 実在確認済み（2026-07-05）               |
 
 - 並列実行しない（親が同一 Claude 枠を消費し、負荷で時間計測が歪む）
 - 各ラン完了時に `metrics.json` の `outcome` を確認。`stalled` / `timeout` / `failed` のランは 1 回だけ再実行してよいが、失敗ランの run ディレクトリと metrics は破棄せず残す（停滞率・失敗率も報告対象）
@@ -63,7 +64,7 @@ node src/bench/cli.ts report
 
 ## 再開後の残作業
 
-1. 本計測 18 ラン（上記順、Sonnet5 最後）→ `report` で集計 → 結果を docs へ（品質スコア中央値 + 効率 Pareto + ハーネス交絡・停滞率の注記。DESIGN.md §5〜§7）
+1. 本計測 21 ラン（上記順、Sonnet5 → Opus4.8 を最後）→ `report` で集計 → 結果を docs へ（品質スコア中央値 + 効率 Pareto + ハーネス交絡・停滞率の注記。DESIGN.md §5〜§7）
 2. 委譲のたびに `benchmarks/impressions.md` へ定性所感を追記する（ユーザー依頼による運用）
 3. （任意・マイルストーン4）Web ギャラリー: 各モデル代表ランを Godot Web エクスポートし、**別リポジトリ**の GitHub Pages へ（DESIGN.md §9-4。単一スレッドエクスポート必須、COOP/COEP 不可のため）
 4. 本リポジトリの public 化はラウンド完了後（DESIGN.md §7。公開時点でこのラウンドの仕様・テストは公開済み扱いとなり、以後の再測定はバリアント差し替え）
