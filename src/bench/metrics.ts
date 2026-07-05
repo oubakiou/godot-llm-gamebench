@@ -102,13 +102,51 @@ const estimatedTokensFromDelegate = (delegateMetricsJsonl: string): ChildTokens 
   return { cost_usd: null, input: total.input, measurement: 'estimated', output: total.output }
 }
 
+// observe JSON の usage は delegate-skills v0.6.0 以降のみ存在する。
+// 旧レイアウトのランや usage 欠損ランでは従来のフォールバックが効く
+const usageFromObserveFiles = (delegateWorkDir: string): ChildTokens | null => {
+  const observeFiles = walkFiles(delegateWorkDir).filter((file) => file.endsWith('_observe.json'))
+  const usages = observeFiles.flatMap((file) => {
+    try {
+      const record = JSON.parse(readFileSync(file, 'utf8')) as JsonRecord
+      const usage = record.usage
+      return typeof usage === 'object' && usage !== null ? [usage as JsonRecord] : []
+    } catch {
+      return []
+    }
+  })
+  // 一部の往復だけ usage が欠けたラン（SIGKILL 打ち切り等）で部分和を実測と申告しないよう、
+  // 全往復分が揃わない場合は observe usage を使わずフォールバックに任せる
+  if (usages.length === 0 || usages.length < observeFiles.length) {
+    return null
+  }
+  const costs = usages.map((usage) => usage.cost_usd)
+  const allCostsFinite = costs.every(
+    (value): value is number => typeof value === 'number' && Number.isFinite(value)
+  )
+  return {
+    // 1 往復でもコスト不明があれば部分和を総コストとして誤読させず N/A（単価表換算）へ委ねる
+    cost_usd: allCostsFinite ? costs.reduce((sum, value) => sum + value, 0) : null,
+    input: usages.reduce((sum, usage) => sum + numberFrom(usage.input_tokens), 0),
+    // 往復間で measured / estimated が混在するランは、実測精度を過大申告しないよう estimated に落とす
+    measurement: usages.every((usage) => usage.measurement === 'measured')
+      ? 'measured'
+      : 'estimated',
+    output: usages.reduce((sum, usage) => sum + numberFrom(usage.output_tokens), 0),
+  }
+}
+
 export const collectChildTokens = (
   delegateWorkDir: string,
   delegateMetricsJsonl: string,
   backend: string
 ): ChildTokens => {
+  const observeUsage = usageFromObserveFiles(delegateWorkDir)
+  if (observeUsage !== null && observeUsage.measurement === 'measured') {
+    return observeUsage
+  }
   if (backend !== 'codex') {
-    return estimatedTokensFromDelegate(delegateMetricsJsonl)
+    return observeUsage ?? estimatedTokensFromDelegate(delegateMetricsJsonl)
   }
   // codex-home の位置は delegate-skills のレイアウト（work 直下 or 往復ごとの run_dir 配下）
   // に依存するため、固定パスではなくパス一致で全往復分を集計する
@@ -127,7 +165,7 @@ export const collectChildTokens = (
     { input: 0, output: 0 }
   )
   if (totals.input === 0 && totals.output === 0) {
-    return estimatedTokensFromDelegate(delegateMetricsJsonl)
+    return observeUsage ?? estimatedTokensFromDelegate(delegateMetricsJsonl)
   }
   return { cost_usd: null, input: totals.input, measurement: 'measured', output: totals.output }
 }
@@ -187,6 +225,120 @@ if (import.meta.vitest) {
       expect(backendForModel('devin-glm-5.2')).toBe('devin')
       expect(backendForModel('composer-2.5')).toBe('cursor')
       expect(backendForModel('sonnet-5')).toBe('claude')
+    })
+
+    it('prefers measured usage from observe json and sums round trips', () => {
+      const dir = '.temp/vitest-observe-usage'
+      mkdirSync(`${dir}/delegate_a`, { recursive: true })
+      writeFileSync(
+        `${dir}/delegate_a_observe.json`,
+        JSON.stringify({
+          usage: { cost_usd: 0.5, input_tokens: 100, measurement: 'measured', output_tokens: 20 },
+        })
+      )
+      writeFileSync(
+        `${dir}/delegate_b_observe.json`,
+        JSON.stringify({
+          usage: { cost_usd: 0.25, input_tokens: 30, measurement: 'measured', output_tokens: 5 },
+        })
+      )
+      expect(collectChildTokens(dir, `${dir}/none.jsonl`, 'claude')).toEqual({
+        cost_usd: 0.75,
+        input: 130,
+        measurement: 'measured',
+        output: 25,
+      })
+      rmSync(dir, { force: true, recursive: true })
+    })
+
+    it('nulls total cost when any round trip has unknown cost', () => {
+      const dir = '.temp/vitest-observe-partial-cost'
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(
+        `${dir}/delegate_a_observe.json`,
+        JSON.stringify({
+          usage: { cost_usd: 0.5, input_tokens: 100, measurement: 'measured', output_tokens: 20 },
+        })
+      )
+      writeFileSync(
+        `${dir}/delegate_b_observe.json`,
+        JSON.stringify({
+          usage: { cost_usd: null, input_tokens: 30, measurement: 'measured', output_tokens: 5 },
+        })
+      )
+      expect(collectChildTokens(dir, `${dir}/none.jsonl`, 'claude')).toEqual({
+        cost_usd: null,
+        input: 130,
+        measurement: 'measured',
+        output: 25,
+      })
+      rmSync(dir, { force: true, recursive: true })
+    })
+
+    it('falls back entirely when usage is missing for a subset of round trips', () => {
+      const dir = '.temp/vitest-observe-partial-usage'
+      const jsonl = `${dir}/metrics.jsonl`
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(
+        `${dir}/delegate_a_observe.json`,
+        JSON.stringify({
+          usage: { cost_usd: 0.5, input_tokens: 100, measurement: 'measured', output_tokens: 20 },
+        })
+      )
+      writeFileSync(`${dir}/delegate_b_observe.json`, JSON.stringify({ state: { phase: 'ended' } }))
+      writeFileSync(
+        jsonl,
+        `${JSON.stringify({ kind: 'prepare', request: { estimated_tokens: 40 }, response: { estimated_tokens: 10 } })}\n`
+      )
+      expect(collectChildTokens(dir, jsonl, 'claude')).toEqual({
+        cost_usd: null,
+        input: 40,
+        measurement: 'estimated',
+        output: 10,
+      })
+      rmSync(dir, { force: true, recursive: true })
+    })
+
+    it('downgrades to estimated when round trips mix measured and estimated usage', () => {
+      const dir = '.temp/vitest-observe-mixed'
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(
+        `${dir}/delegate_a_observe.json`,
+        JSON.stringify({
+          usage: { input_tokens: 100, measurement: 'measured', output_tokens: 20 },
+        })
+      )
+      writeFileSync(
+        `${dir}/delegate_b_observe.json`,
+        JSON.stringify({
+          usage: { input_tokens: 40, measurement: 'estimated', output_tokens: 8 },
+        })
+      )
+      expect(collectChildTokens(dir, `${dir}/none.jsonl`, 'cursor')).toEqual({
+        cost_usd: null,
+        input: 140,
+        measurement: 'estimated',
+        output: 28,
+      })
+      rmSync(dir, { force: true, recursive: true })
+    })
+
+    it('falls back to delegate metrics estimates when observe usage is absent', () => {
+      const dir = '.temp/vitest-observe-absent'
+      const jsonl = `${dir}/metrics.jsonl`
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(`${dir}/delegate_a_observe.json`, JSON.stringify({ state: { phase: 'ended' } }))
+      writeFileSync(
+        jsonl,
+        `${JSON.stringify({ kind: 'prepare', request: { estimated_tokens: 12 }, response: { estimated_tokens: 3 } })}\n`
+      )
+      expect(collectChildTokens(dir, jsonl, 'devin')).toEqual({
+        cost_usd: null,
+        input: 12,
+        measurement: 'estimated',
+        output: 3,
+      })
+      rmSync(dir, { force: true, recursive: true })
     })
   })
 }

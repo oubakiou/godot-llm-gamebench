@@ -8,7 +8,7 @@
 - リファレンス実装: `benchmarks/tasks/conveyor-courier/reference/`（採点 100/100）
 - 隠しテスト: `benchmarks/tasks/conveyor-courier/hidden-tests/run_tests.gd`（33 ケース。ミューテーション 3 種で感度検証済み。子モデルに見せない）
 - orchestrator: `src/bench/cli.ts`（run / grade / report、watchdog 内蔵）。`npm run check` / `npm run test`（9 テスト）pass
-- delegate skill: **delegate-skills v0.5.0**（observe JSON / heartbeat / failed response 対応版）を再インストール済み。orchestrator は v0.5.0 の新レイアウト（往復ごとの `delegate_*/` run_dir）に対応済み
+- delegate skill: **delegate-skills v0.6.0**（observe JSON への usage 記録 / claude backend の stream-json 化 / model*source 対応版。issue #2〜#5 実装済み）をインストール済み。orchestrator は往復ごとの `delegate*\*/` run_dir レイアウトと observe JSON usage の両方に対応済み
 - E2E 検証（haiku、ベンチ成績ではない）: rep0 成功（旧 skill、98.18 点）→ rep1/rep2 失敗（親の早期離脱、下記「教訓」参照、修正済み）→ rep3 は子の停滞により 40 分絶対上限での timeout 打ち切り見込み（2026-07-04 16:44 頃）
 
 ### 再開時にまず確認すること
@@ -21,7 +21,7 @@
 1. **本計測の開始はユーザーの合図があってから**（タスク #7）。開始方式は未決定: パイロット 1 ラン（推奨）か全ラン一括かを開始時に確認する
 2. 天井効果（haiku がほぼ満点 = 品質軸の圧縮）は**対応せずこのまま測る**。品質＋効率の 2 軸報告で差を見る
 3. **Sonnet5 は他 5 モデルの 15 ラン完了後、すぐ続けて実行**。ただし Claude 実行系は枠逼迫時に停滞するため（下記）、枠に余裕がある時間帯に流すこと
-4. 計測期間中は CLI / skill / Godot のバージョンを固定（claude 2.1.200 / codex 0.142.3 / devin 2026.8.18 / cursor-agent 2026.07.01 / godot 4.4.1 / delegate-skills v0.5.0。claude / codex は package.json の exact 指定で固定）
+4. 計測期間中は CLI / skill / Godot のバージョンを固定（claude 2.1.200 / codex 0.142.3 / devin 2026.8.18 / cursor-agent 2026.07.01 / godot 4.4.1 / delegate-skills v0.6.0。claude / codex は package.json の exact 指定で固定）
 
 ## 実行手順
 
@@ -57,7 +57,7 @@ node src/bench/cli.ts report
 2. **プロトコル違反検出**: 親の最終応答が completed / failed の一語でない、または observe JSON に `state.phase == "running"` の委譲が残っている場合、`violatesParentProtocol()` が outcome を failed に落とす
 3. **watchdog**: 30 秒間隔サンプリング。無進捗判定は workspace mtime + delegate ログサイズのみ（CPU は生存確認専用。進捗判定に入れると親の CPU 微増で stalled が永久に発火しない）。10 分無進捗で stalled、40 分で timeout、SIGKILL 打ち切り
 4. **Claude 実行系の子は枠逼迫時に停滞する**: sonnet（4.6）と haiku で計 3 回観測。プロセス生存・heartbeat 更新のままファイルを書かなくなる。レート制限解除直後でも起きた。Sonnet5 ランはこのリスクを織り込み、失敗時は再実行 + metrics 保全で対応
-5. **子トークンの計測精度**: Codex = measured（observe run_dir 配下の codex-home セッション JSONL を glob 集計）/ Devin・Cursor・Claude = estimated（chars/4）。`metrics.json` の `measurement` フィールドで区別される
+5. **子トークンの計測精度**（v0.6.0 時点）: 第一ソースは observe JSON の `usage`（skill が記録。Claude / Codex / Devin = measured、Cursor = CLI が usage JSON を出さないため estimated）。observe usage が無い旧ランは codex-home セッション JSONL（Codex）→ chars/4 推定の順にフォールバック。往復間で measured / estimated が混在したランは estimated に落とす。`metrics.json` の `measurement` フィールドで区別される
 6. **`DELEGATE_IMPLEMENT_MODEL` がシェルに残留することがある**: orchestrator 経由なら env 明示設定で安全。手動で delegate skill を使う場合は毎回明示指定する
 7. observe JSON（`<run>/delegate/work/*_observe.json`）は失敗調査の一次情報。`state.phase` / `state.exit_code` / `events` / `streams.stderr.content` を jq で読む
 
@@ -77,7 +77,7 @@ node src/bench/cli.ts report
 - 設計正本: `docs/design/DESIGN.md`（対象モデル・計測・採点・公平性・カンニング防止のすべて）
 - 定性メモ: `benchmarks/impressions.md`（公開文書になる前提で表現に注意）
 - 上流への貢献: delegate-skills [issue #1](https://github.com/oubakiou/delegate-skills/issues/1)（観測性の提案 → v0.5.0 で実装済み。レビュー済み文書: docs/feature/delegate-worker-observability.md）
-- 上流への貢献（起票済み・未実装。ハーネス知見 #5/#4/#6/#1 由来。実装取り込みはラウンド完了後 — 計測期間中は v0.5.0 凍結）:
+- 上流への貢献（ハーネス知見 #5/#4/#6/#1 由来。**すべて v0.6.0 で実装済み・本プロジェクトへ導入済み**）:
   - [issue #2](https://github.com/oubakiou/delegate-skills/issues/2) 子ワーカーの token usage 実測値を observe JSON へ（claude / cursor / devin backend）
   - [issue #3](https://github.com/oubakiou/delegate-skills/issues/3) claude backend で stall 検出が機能しない（stream-json 化の提案）
   - [issue #4](https://github.com/oubakiou/delegate-skills/issues/4) resolve-model.sh の解決由来（env / default）の可視化
