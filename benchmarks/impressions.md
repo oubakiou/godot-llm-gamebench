@@ -203,7 +203,7 @@
 - **orchestrator が落ちても子プロセスツリーは生き残る**: watchdog crash 時（opus rep1）に親 claude -p と子ワーカーが孤児化し、枠を消費し続けていた。ハーネス障害後は必ずプロセス残骸を確認・停止する
 - シェル環境に `DELEGATE_IMPLEMENT_MODEL` が残留することがある。委譲時は毎回明示指定しないと意図しないモデルに解決される（sonnet 指定のつもりが gpt-5.5 に解決された事例あり。v0.6.0 からは prepare 出力の `model_source` で env 由来を検出できる）
 - Cursor の GLM は `glm-5.2-high` / `glm-5.2-max` のみで、素の `glm-5.2` は存在しない
-- **Cursor `agent` CLI は複数プロセス同時起動で `~/.cursor/cli-config.json` の書き込みが競合して落ちることがある**（`ENOENT: rename cli-config.json.tmp`。2026-07-05 のスモーク確認を 3 プロセス並列で行った際に 1 件発生、単独再試行で成功）。ベンチ本計測は直列実行のため影響しないが、スモーク確認も含め agent CLI は並列起動しないこと
+- **Cursor `agent` CLI は複数プロセス同時起動で `~/.cursor/cli-config.json` の書き込みが競合して落ちることがある**（`ENOENT: rename cli-config.json.tmp`。2026-07-05 のスモーク確認を 3 プロセス並列で行った際に 1 件発生、単独再試行で成功）。ベンチ本計測は直列実行のため影響しないが、スモーク確認も含め agent CLI は並列起動しないこと。skill 側の緩和策（config 隔離 or 直列化）は [issue #8](https://github.com/oubakiou/delegate-skills/issues/8) として上流へ提案済み
 - **子ワーカーが自作のハングするサブプロセスを待って停滞する**: 終了処理のない godot スクリプトを Bash 実行し、返らないコマンドを待ち続ける形。claude-haiku-4.5 で 7 試行中 5 回観測（sonnet5 0/3、opus4.8 1/6 と頻度はモデル依存）。非対話の子はツールエラーを受け取る機会がないまま watchdog SIGKILL に至るため、delegate-skills へ Bash timeout 注入等の復帰策を提案（[issue #7](https://github.com/oubakiou/delegate-skills/issues/7)）
 - **停滞ランの残存実装が無限出力する場合、grader が stdout の文字列化で落ちる**（`ERR_STRING_TOO_LONG`、数百 MB 到達）: 出力捕捉に上限（先頭・末尾 4MB ずつ保全、中間切り捨て）を入れて修正済み。打ち切りラン採点はこの種の暴走成果物を前提に組む必要がある
 - **親が dispatch 前に request を作り直すと「prepared のまま dispatch されない observe JSON」が残る**（2026-07-05 の gpt-5.3-codex-spark ランで 2 回観測）: 旧 metrics 集計はこれを往復数の分母に数えて usage 全数チェックが誤発動し、実測が取れているのに estimated（ほぼゼロ）へフォールバックしていた。dispatch されていない observe を分母から除外する修正を実施し、影響 2 ランの metrics は保存アーティファクトから再計算した。上流へは [issue #6](https://github.com/oubakiou/delegate-skills/issues/6) として報告済み

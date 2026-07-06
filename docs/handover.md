@@ -64,3 +64,4 @@ node src/bench/cli.ts report
   - [issue #2](https://github.com/oubakiou/delegate-skills/issues/2)〜[#5](https://github.com/oubakiou/delegate-skills/issues/5) usage 実測・stall 検出・model_source・非対話親の制約明記（**すべて v0.6.0 で実装済み・本プロジェクトへ導入済み**）
   - [issue #6](https://github.com/oubakiou/delegate-skills/issues/6) dispatch されずに残留する prepared フェーズの observe JSON の扱い（利用側は対処済み・上流未実装）
   - [issue #7](https://github.com/oubakiou/delegate-skills/issues/7) claude backend の子が自作のハングするサブプロセスを待って停滞する問題への復帰策（claude-haiku-4-5 計測で 5/7 試行の停滞から特定。上流未実装。次ラウンドがあるなら Bash timeout 注入の導入を推奨）
+  - [issue #8](https://github.com/oubakiou/delegate-skills/issues/8) cursor backend の共有 `~/.cursor/cli-config.json` が並列 dispatch で競合し得る（codex の CODEX_HOME 隔離に相当する対策の提案。上流未実装）
