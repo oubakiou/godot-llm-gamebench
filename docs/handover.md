@@ -65,7 +65,7 @@ node src/bench/cli.ts report
 
 ## 再開後の残作業
 
-1. 本計測 24 ラン（上記順、Sonnet5 → Opus4.8 → fable-direct を最後）→ `report` で集計 → 結果を docs へ（品質スコア中央値 + 効率 Pareto + ハーネス交絡・停滞率の注記。DESIGN.md §5〜§7）
+1. 本計測 24 ラン（上記順、Sonnet5 → Opus4.8 → fable-direct を最後）→ `report` で集計 → 結果を docs へ（品質スコア合算 [最大 300、2026-07-06 に中央値から変更] + 効率 Pareto + ハーネス交絡・停滞率の注記。DESIGN.md §5〜§7）
 2. 委譲のたびに `benchmarks/impressions.md` へ定性所感を追記する（ユーザー依頼による運用）
 3. （任意・マイルストーン4）Web ギャラリー: 各モデル代表ランを Godot Web エクスポートし、**別リポジトリ**の GitHub Pages へ（DESIGN.md §9-4。単一スレッドエクスポート必須、COOP/COEP 不可のため）
 4. 本リポジトリの public 化はラウンド完了後（DESIGN.md §7。公開時点でこのラウンドの仕様・テストは公開済み扱いとなり、以後の再測定はバリアント差し替え）
@@ -84,3 +84,5 @@ node src/bench/cli.ts report
   - [issue #3](https://github.com/oubakiou/delegate-skills/issues/3) claude backend で stall 検出が機能しない（stream-json 化の提案）
   - [issue #4](https://github.com/oubakiou/delegate-skills/issues/4) resolve-model.sh の解決由来（env / default）の可視化
   - [issue #5](https://github.com/oubakiou/delegate-skills/issues/5) SKILL.md へ非対話親（claude -p）の利用制約を明記
+  - [issue #6](https://github.com/oubakiou/delegate-skills/issues/6) dispatch されずに残留する prepared フェーズの observe JSON の扱い（追加ラウンド計測中に発見、利用側は対処済み・未実装）
+  - [issue #7](https://github.com/oubakiou/delegate-skills/issues/7) claude backend の子が自作のハングするサブプロセスを待って停滞する問題への復帰策（haiku 4.5 計測で 4/7 試行の停滞から特定。Bash timeout 注入・プロンプト規律・stall 時プロセスツリー記録を提案）
