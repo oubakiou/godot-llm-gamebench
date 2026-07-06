@@ -65,6 +65,8 @@ node src/bench/cli.ts report
 
 ## 再開後の残作業
 
+> 2026-07-06 追記: 本計測 24 ラン + 追加計測 6 モデル（追加 5 モデル 15 ラン + claude-haiku-4-5、計 22 試行）は**すべて完了**。コード品質は全採用ランの 5 段階精査済み（impressions.md）。残るのは下記 1 の「結果を docs へ」以降と 3〜4。
+
 1. 本計測 24 ラン（上記順、Sonnet5 → Opus4.8 → fable-direct を最後）→ `report` で集計 → 結果を docs へ（品質スコア合算 [最大 300、2026-07-06 に中央値から変更] + 効率 Pareto + ハーネス交絡・停滞率の注記。DESIGN.md §5〜§7）
 2. 委譲のたびに `benchmarks/impressions.md` へ定性所感を追記する（ユーザー依頼による運用）
 3. （任意・マイルストーン4）Web ギャラリー: 各モデル代表ランを Godot Web エクスポートし、**別リポジトリ**の GitHub Pages へ（DESIGN.md §9-4。単一スレッドエクスポート必須、COOP/COEP 不可のため）
