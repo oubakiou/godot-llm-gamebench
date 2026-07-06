@@ -63,11 +63,16 @@ const loadPrices = (): Map<string, PriceRow> => {
   return prices
 }
 
+// devin-* / cursor-* の prefix は実行系 CLI の振り分け用で、
+// 価格表のキーは素のモデル名のため剥離してから引き直す
+export const lookupPrice = (model: string, prices: Map<string, PriceRow>): PriceRow | undefined =>
+  prices.get(model) ?? prices.get(model.replace(/^(?:devin|cursor)-/, ''))
+
 const calculateChildCost = (metrics: Metrics, prices: Map<string, PriceRow>): number | null => {
   if (metrics.child_tokens.cost_usd !== null) {
     return metrics.child_tokens.cost_usd
   }
-  const price = prices.get(metrics.model)
+  const price = lookupPrice(metrics.model, prices)
   if (
     price?.input === undefined ||
     price.input === null ||
@@ -96,7 +101,8 @@ const loadRuns = (): RunSummary[] => {
       if (metrics === null || grade === null) {
         return []
       }
-      // haiku はハーネス検証専用（DESIGN §8）。ベンチ集計から除外する
+      // エイリアス haiku のランはハーネス検証専用（DESIGN §8）で集計から除外する。
+      // 正式ランはフル ID claude-haiku-4-5 で実行され、この除外に当たらない
       if (metrics.model === 'haiku') {
         return []
       }
@@ -143,7 +149,9 @@ export const buildReportMarkdown = (runs: RunSummary[] = loadRuns()): string => 
       return [
         model,
         `${String(completed.length)}/${String(modelRuns.length)}`,
-        fmt(median(completed.map((run) => run.quality))),
+        // 品質は completed ラン合計（各モデル 3 反復で最大 300）。反復間の再現性を
+        // 評価へ含めるための合算で、completed 不足は 0 埋めせず Completed/Attempts 列で読む
+        fmt(completed.reduce((sum, run) => sum + run.quality, 0)),
         fmt(median(completed.map((run) => run.wallClockMs / 1000)), 1),
         fmt(median(completed.map((run) => run.roundTrips)), 1),
         fmt(median(completed.map((run) => run.childTokens)), 0),
@@ -152,7 +160,7 @@ export const buildReportMarkdown = (runs: RunSummary[] = loadRuns()): string => 
       ]
     })
   return [
-    '| Model | Completed/Attempts | Quality median | Seconds median | Round trips median | Child tokens median | Total cost median USD | Non-completed |',
+    '| Model | Completed/Attempts | Quality sum (max 300) | Seconds median | Round trips median | Child tokens median | Total cost median USD | Non-completed |',
     '| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
     ...rows.map((row) => `| ${row.join(' | ')} |`),
   ].join('\n')
@@ -160,6 +168,23 @@ export const buildReportMarkdown = (runs: RunSummary[] = loadRuns()): string => 
 
 if (import.meta.vitest) {
   const { describe, expect, it } = import.meta.vitest
+
+  describe('lookupPrice', () => {
+    const prices = new Map<string, PriceRow>([
+      ['glm-5.2', { input: 1.4, model: 'glm-5.2', output: 4.4 }],
+      ['composer-2.5-fast', { input: 3, model: 'composer-2.5-fast', output: 15 }],
+    ])
+
+    it('resolves exact keys and strips backend prefixes', () => {
+      expect(lookupPrice('composer-2.5-fast', prices)?.input).toBe(3)
+      expect(lookupPrice('devin-glm-5.2', prices)?.input).toBe(1.4)
+      expect(lookupPrice('cursor-glm-5.2', prices)?.input).toBe(1.4)
+    })
+
+    it('returns undefined for unknown models', () => {
+      expect(lookupPrice('unknown-model', prices)).toBeUndefined()
+    })
+  })
 
   describe('report aggregation', () => {
     it('prints model medians as markdown', () => {
@@ -202,7 +227,7 @@ if (import.meta.vitest) {
         },
       ])
       expect(markdown).toContain('| a | 1/1 | 20.00 | 2.0 | 2.0 | 200 | N/A | - |')
-      expect(markdown).toContain('| b | 2/3 | 20.00 | 2.0 | 2.0 | 200 | 0.2000 | 1 stalled |')
+      expect(markdown).toContain('| b | 2/3 | 40.00 | 2.0 | 2.0 | 200 | 0.2000 | 1 stalled |')
     })
   })
 }

@@ -128,18 +128,28 @@ const estimatedTokensFromDelegate = (delegateMetricsJsonl: string): ChildTokens 
 // 旧レイアウトのランや usage 欠損ランでは従来のフォールバックが効く
 const usageFromObserveFiles = (delegateWorkDir: string): ChildTokens | null => {
   const observeFiles = walkFiles(delegateWorkDir).filter((file) => file.endsWith('_observe.json'))
-  const usages = observeFiles.flatMap((file) => {
+  // prepared のまま dispatch されなかった observe（親が request を作り直したケース）は
+  // 子プロセスを持たないため、usage の全数チェックの分母に含めない
+  let unreadable = 0
+  const dispatched: JsonRecord[] = []
+  for (const file of observeFiles) {
     try {
       const record = JSON.parse(readFileSync(file, 'utf8')) as JsonRecord
-      const usage = record.usage
-      return typeof usage === 'object' && usage !== null ? [usage as JsonRecord] : []
+      const state = typeof record.state === 'object' && record.state !== null ? record.state : {}
+      if ((state as JsonRecord).phase !== 'prepared') {
+        dispatched.push(record)
+      }
     } catch {
-      return []
+      unreadable += 1
     }
+  }
+  const usages = dispatched.flatMap((record) => {
+    const usage = record.usage
+    return typeof usage === 'object' && usage !== null ? [usage as JsonRecord] : []
   })
   // 一部の往復だけ usage が欠けたラン（SIGKILL 打ち切り等）で部分和を実測と申告しないよう、
   // 全往復分が揃わない場合は observe usage を使わずフォールバックに任せる
-  if (usages.length === 0 || usages.length < observeFiles.length) {
+  if (usages.length === 0 || unreadable > 0 || usages.length < dispatched.length) {
     return null
   }
   const costs = usages.map((usage) => usage.cost_usd)
@@ -306,6 +316,29 @@ if (import.meta.vitest) {
         input: 130,
         measurement: 'measured',
         output: 25,
+      })
+      rmSync(dir, { force: true, recursive: true })
+    })
+
+    it('ignores prepared-only observe files that never dispatched a child', () => {
+      const dir = '.temp/vitest-observe-prepared'
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(
+        `${dir}/delegate_a_observe.json`,
+        JSON.stringify({ state: { phase: 'prepared' } })
+      )
+      writeFileSync(
+        `${dir}/delegate_b_observe.json`,
+        JSON.stringify({
+          state: { phase: 'ended' },
+          usage: { cost_usd: 0.5, input_tokens: 100, measurement: 'measured', output_tokens: 20 },
+        })
+      )
+      expect(collectChildTokens(dir, `${dir}/none.jsonl`, 'codex')).toEqual({
+        cost_usd: 0.5,
+        input: 100,
+        measurement: 'measured',
+        output: 20,
       })
       rmSync(dir, { force: true, recursive: true })
     })

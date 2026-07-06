@@ -25,6 +25,65 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const hiddenTestPath = join(repoRoot, 'benchmarks/tasks/conveyor-courier/hidden-tests/run_tests.gd')
 const round = (value: number): number => Math.round(value * 100) / 100
 
+// 停滞ランの残存実装が毎フレーム print する等で出力が数百 MB に達することがあり、
+// 無制限バッファは文字列化で grader ごと落とす（ERR_STRING_TOO_LONG）。
+// 判定に使う先頭（起動ログ）と末尾（テストサマリー）だけ保全し、中間を切り捨てる
+const CAPTURE_LIMIT_BYTES = 4 * 1024 * 1024
+
+export const boundedCapture = (
+  limitBytes: number = CAPTURE_LIMIT_BYTES
+): { push: (chunk: Buffer) => void; text: () => string } => {
+  const head: Buffer[] = []
+  const tail: Buffer[] = []
+  let headBytes = 0
+  let tailBytes = 0
+  let truncated = false
+  const pushTail = (chunk: Buffer): void => {
+    truncated = true
+    tail.push(chunk)
+    tailBytes += chunk.length
+    // 単一チャンクが上限を超えるケースでも末尾 limitBytes だけ残す
+    while (tailBytes > limitBytes) {
+      const first = tail[0]
+      if (first === undefined) {
+        break
+      }
+      const excess = tailBytes - limitBytes
+      if (first.length <= excess) {
+        tail.shift()
+        tailBytes -= first.length
+      } else {
+        tail[0] = first.subarray(excess)
+        tailBytes -= excess
+      }
+    }
+  }
+  return {
+    push: (chunk: Buffer): void => {
+      if (headBytes < limitBytes) {
+        const room = limitBytes - headBytes
+        if (chunk.length <= room) {
+          head.push(chunk)
+          headBytes += chunk.length
+          return
+        }
+        head.push(chunk.subarray(0, room))
+        headBytes = limitBytes
+        pushTail(chunk.subarray(room))
+        return
+      }
+      pushTail(chunk)
+    },
+    text: (): string => {
+      const headText = Buffer.concat(head).toString('utf8')
+      if (!truncated) {
+        return headText
+      }
+      return `${headText}\n...[grader capture truncated]...\n${Buffer.concat(tail).toString('utf8')}`
+    },
+  }
+}
+
 const runCommand = async (
   command: string,
   args: string[],
@@ -32,8 +91,8 @@ const runCommand = async (
 ): Promise<CommandResult> =>
   new Promise((resolveResult) => {
     const child = spawn(command, args, { cwd: options.cwd, stdio: ['ignore', 'pipe', 'pipe'] })
-    const stdoutChunks: Buffer[] = []
-    const stderrChunks: Buffer[] = []
+    const stdoutCapture = boundedCapture()
+    const stderrCapture = boundedCapture()
     let timedOut = false
     const timer =
       options.timeoutMs === undefined
@@ -42,8 +101,8 @@ const runCommand = async (
             timedOut = true
             child.kill('SIGKILL')
           }, options.timeoutMs)
-    child.stdout.on('data', (chunk: Buffer) => stdoutChunks.push(chunk))
-    child.stderr.on('data', (chunk: Buffer) => stderrChunks.push(chunk))
+    child.stdout.on('data', (chunk: Buffer) => stdoutCapture.push(chunk))
+    child.stderr.on('data', (chunk: Buffer) => stderrCapture.push(chunk))
     child.on('close', (exitCode) => {
       if (timer !== undefined) {
         clearTimeout(timer)
@@ -52,8 +111,8 @@ const runCommand = async (
         args,
         command,
         exitCode,
-        stderr: Buffer.concat(stderrChunks).toString('utf8'),
-        stdout: Buffer.concat(stdoutChunks).toString('utf8'),
+        stderr: stderrCapture.text(),
+        stdout: stdoutCapture.text(),
         timedOut,
       })
     })
@@ -246,6 +305,39 @@ export const gradeWorkspace = async (workspaceInput: string): Promise<GradeResul
 
 if (import.meta.vitest) {
   const { describe, expect, it } = import.meta.vitest
+
+  describe('boundedCapture', () => {
+    it('passes small output through untouched', () => {
+      const capture = boundedCapture(64)
+      capture.push(Buffer.from('hello '))
+      capture.push(Buffer.from('world'))
+      expect(capture.text()).toBe('hello world')
+    })
+
+    it('keeps head and tail when output exceeds the limit', () => {
+      const capture = boundedCapture(8)
+      capture.push(Buffer.from('HEAD-PART'))
+      for (let i = 0; i < 1000; i += 1) {
+        capture.push(Buffer.from(`mid${String(i)}`))
+      }
+      capture.push(Buffer.from('TAIL-END'))
+      const text = capture.text()
+      expect(text.startsWith('HEAD-PAR')).toBe(true)
+      expect(text.endsWith('TAIL-END')).toBe(true)
+      expect(text).toContain('[grader capture truncated]')
+      expect(text.length).toBeLessThan(200)
+    })
+
+    it('caps memory even when a single chunk exceeds the limit', () => {
+      const capture = boundedCapture(8)
+      capture.push(Buffer.from(`AAAA${'x'.repeat(1000)}ZZZZ`))
+      const text = capture.text()
+      expect(text.startsWith('AAAA')).toBe(true)
+      expect(text.endsWith('ZZZZ')).toBe(true)
+      expect(text).toContain('[grader capture truncated]')
+      expect(text.length).toBeLessThan(80)
+    })
+  })
 
   describe('grade rubric', () => {
     it('converts hidden test results to the documented rubric', () => {
