@@ -178,7 +178,10 @@ grade.sh <workspace>
                                         # （addon 非依存の自己完結 GDScript ランナー。
                                         #   任意の workspace に注入して headless 実行する）
   4. 決定性テスト                        # 同一 seed + 同一操作列を 2 回実行し結果一致
-  5. 型品質チェック                      # untyped_declaration 等の警告カウント
+  5. 型品質チェック                      # untyped_declaration 等を error に昇格 (=2) した
+                                        # 一時プロジェクトで全 .gd を per-file --check-only し、
+                                        # "Warning treated as error" 行をカウント
+                                        # （警告値 1 は headless 実行では無音のため 2 が必須）
 ```
 
 ### ルーブリック（100 点、全項目自動採点）

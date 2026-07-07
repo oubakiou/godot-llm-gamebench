@@ -34,26 +34,28 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
+	if event is InputEventKey:
 		var key_event: InputEventKey = event
-		match key_event.keycode:
-			KEY_1:
-				_selected_belt = BoardModel.CellKind.BELT_UP
-			KEY_2:
-				_selected_belt = BoardModel.CellKind.BELT_RIGHT
-			KEY_3:
-				_selected_belt = BoardModel.CellKind.BELT_DOWN
-			KEY_4:
-				_selected_belt = BoardModel.CellKind.BELT_LEFT
-			KEY_R:
-				_restart()
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if key_event.pressed and not key_event.echo:
+			match key_event.keycode:
+				KEY_1:
+					_selected_belt = BoardModel.CellKind.BELT_UP
+				KEY_2:
+					_selected_belt = BoardModel.CellKind.BELT_RIGHT
+				KEY_3:
+					_selected_belt = BoardModel.CellKind.BELT_DOWN
+				KEY_4:
+					_selected_belt = BoardModel.CellKind.BELT_LEFT
+				KEY_R:
+					_restart()
+	if event is InputEventMouseButton:
 		var mouse_event: InputEventMouseButton = event
-		var cell: Vector2i = _screen_to_cell(mouse_event.position)
-		if _model.get_cell(cell) == BoardModel.CellKind.EMPTY:
-			_model.place_belt(cell, _selected_belt)
-		elif _is_belt(_model.get_cell(cell)):
-			_model.rotate_cell(cell)
+		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			var cell: Vector2i = _screen_to_cell(mouse_event.position)
+			if _model.get_cell(cell) == BoardModel.CellKind.EMPTY:
+				_model.place_belt(cell, _selected_belt)
+			elif _is_belt(_model.get_cell(cell)):
+				_model.rotate_cell(cell)
 
 func _draw() -> void:
 	for y: int in range(BoardModel.HEIGHT):

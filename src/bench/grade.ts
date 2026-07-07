@@ -3,6 +3,7 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -192,8 +193,16 @@ const parseGradeLine = (stdout: string): GradeJson | null => {
   }
 }
 
-const countUntypedWarnings = (stderr: string): number =>
-  stderr.split(/\r?\n/).filter((line) => /UNTYPED|untyped/i.test(line)).length
+// GDScript の警告は設定値 1 (warn) だとエディタ UI にしか出ず、headless 実行の
+// stderr には一行も出力されない。2 (error 昇格) にして初めて
+// "SCRIPT ERROR: Parse Error: ... (Warning treated as error.)" として現れる
+export const countWarningErrors = (stderr: string): number =>
+  stderr.split(/\r?\n/).filter((line) => line.includes('(Warning treated as error.)')).length
+
+export const listGdScripts = (projectDir: string): string[] =>
+  readdirSync(projectDir, { encoding: 'utf8', recursive: true })
+    .filter((entry) => entry.endsWith('.gd') && !entry.startsWith('.godot'))
+    .sort()
 
 const cpRecursive = (from: string, to: string): void => {
   cpSync(from, to, { recursive: true })
@@ -222,7 +231,7 @@ const makeTypecheckProject = (workspace: string): string => {
   const existing = existsSync(projectFile) ? readFileSync(projectFile, 'utf8') : ''
   writeFileSync(
     projectFile,
-    `${existing.trimEnd()}\n\n[debug]\n\ngdscript/warnings/untyped_declaration=1\ngdscript/warnings/unsafe_property_access=1\ngdscript/warnings/unsafe_method_access=1\n`
+    `${existing.trimEnd()}\n\n[debug]\n\ngdscript/warnings/untyped_declaration=2\ngdscript/warnings/unsafe_property_access=2\ngdscript/warnings/unsafe_method_access=2\n`
   )
   return tempDir
 }
@@ -279,13 +288,48 @@ export const gradeWorkspace = async (workspaceInput: string): Promise<GradeResul
   let typeProject = ''
   try {
     typeProject = makeTypecheckProject(workspace)
-    const typeResult = await runCommand('godot', ['--headless', '--path', typeProject, '--import'])
-    typeWarnings = countUntypedWarnings(typeResult.stderr)
+    // --import は class_name のグローバルキャッシュ構築のためだけに実行する。
+    // カウントは per-file の --check-only 側で行う（scene から参照されない
+    // スクリプトも漏れなく、かつ重複なく数えるため）
+    const importResult2 = await runCommand('godot', [
+      '--headless',
+      '--path',
+      typeProject,
+      '--import',
+    ])
     commands.push({
       command: `godot --headless --path ${typeProject} --import`,
-      exit_code: typeResult.exitCode,
+      exit_code: importResult2.exitCode,
+      name: 'type-warnings-import',
+      timed_out: importResult2.timedOut,
+    })
+    const scripts = listGdScripts(typeProject)
+    let checkExitCode: number | null = 0
+    let checkTimedOut = false
+    for (const script of scripts) {
+      // 同一プロジェクトの .godot キャッシュを複数 godot プロセスで同時に触ると
+      // 競合しうるため並列化しない
+      // eslint-disable-next-line no-await-in-loop
+      const checkResult = await runCommand('godot', [
+        '--headless',
+        '--path',
+        typeProject,
+        '--check-only',
+        '--script',
+        `res://${script}`,
+      ])
+      typeWarnings += countWarningErrors(checkResult.stderr)
+      checkExitCode =
+        checkResult.exitCode === null || checkExitCode === null
+          ? null
+          : Math.max(checkExitCode, checkResult.exitCode)
+      checkTimedOut ||= checkResult.timedOut
+    }
+    commands.push({
+      command: `godot --headless --path ${typeProject} --check-only --script res://{${scripts.join(',')}}`,
+      exit_code: checkExitCode,
       name: 'type-warnings',
-      timed_out: typeResult.timedOut,
+      timed_out: checkTimedOut,
     })
   } finally {
     if (typeProject !== '') {
@@ -336,6 +380,24 @@ if (import.meta.vitest) {
       expect(text.endsWith('ZZZZ')).toBe(true)
       expect(text).toContain('[grader capture truncated]')
       expect(text.length).toBeLessThan(80)
+    })
+  })
+
+  describe('countWarningErrors', () => {
+    it('counts only warning-as-error lines, not follow-up or plain errors', () => {
+      const stderr = [
+        'SCRIPT ERROR: Parse Error: Variable "counter" has no static type. (Warning treated as error.)',
+        '          at: GDScript::reload (res://scripts/messy.gd:3)',
+        'SCRIPT ERROR: Parse Error: Parameter "amount" has no static type. (Warning treated as error.)',
+        '          at: GDScript::reload (res://scripts/messy.gd:5)',
+        'ERROR: Failed to load script "res://scripts/messy.gd" with error "Parse error".',
+        'SCRIPT ERROR: Parse Error: Expected parameter name.',
+      ].join('\n')
+      expect(countWarningErrors(stderr)).toBe(2)
+    })
+
+    it('returns 0 for clean output', () => {
+      expect(countWarningErrors('')).toBe(0)
     })
   })
 
