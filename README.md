@@ -22,7 +22,7 @@ Scoring runs on two independent axes and they are never combined into one number
 - **Quality**: a 100-point rubric, all of it auto-graded headlessly — functional correctness against hidden tests (60), determinism under a fixed seed (10), type-quality warnings (15), and project/scene health such as import and boot smoke tests (15).
 - **Efficiency**: wall-clock time, delegation round trips, parent-side tokens, child-side tokens, and cost converted from per-model pricing (reported as N/A where pricing or measurement is unavailable).
 
-See [docs/design/DESIGN.md](docs/design/DESIGN.md) for the full rubric, the model roster, and the fairness/anti-cheating design. Results are not published yet; there is no results section here.
+See [docs/design/delegate_implement_bench_design.md](docs/design/delegate_implement_bench_design.md) for the full rubric, and [docs/design/bench_common_design.md](docs/design/bench_common_design.md) for the model roster and fairness/anti-cheating design. Results are not published yet; there is no results section here.
 
 ## Bench commands
 
@@ -45,7 +45,10 @@ See [docs/design/DESIGN.md](docs/design/DESIGN.md) for the full rubric, the mode
 │  │  └─ hidden-tests/           # Hidden test runner (not shown to children)
 │  └─ runs/                      # Run artifacts (gitignored; only aggregate reports are committed)
 ├─ docs/
-│  ├─ design/DESIGN.md           # Benchmark design: spec, architecture, measurement, grading
+│  ├─ design/bench_common_design.md
+│  │                               # Shared benchmark foundation: roster, architecture, measurement, fairness
+│  ├─ design/delegate_implement_bench_design.md
+│  │                               # Conveyor Courier benchmark: task spec, grading, milestones
 │  └─ design/development.md      # Development infrastructure (template-derived)
 ├─ AGENTS.md / CLAUDE.md          # Agent instructions
 └─ package.json
@@ -65,7 +68,8 @@ The npm-package-template infrastructure this project is built on (agent hooks, d
 
 ## Documentation
 
-- [docs/design/DESIGN.md](docs/design/DESIGN.md) — full benchmark design: task spec, execution architecture, measurement, grading, fairness limits
+- [docs/design/bench_common_design.md](docs/design/bench_common_design.md) — shared benchmark foundation: model roster, execution architecture, measurement, fairness limits
+- [docs/design/delegate_implement_bench_design.md](docs/design/delegate_implement_bench_design.md) — Conveyor Courier benchmark: task spec, grading, milestones
 - [docs/design/development.md](docs/design/development.md) — development setup, validation commands, agent hooks
 
 ## License

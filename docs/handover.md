@@ -1,6 +1,6 @@
 # 引き継ぎ: ベンチ結果の公開準備（マイルストーン3 残り）
 
-> 2026-07-06 更新。マイルストーン1（仕様凍結）・2（ハーネス構築 + E2E 検証）・3 の計測パートは**すべて完了**。残るは結果の docs 反映と公開準備のみ。設計の正本は [design/DESIGN.md](./design/DESIGN.md)、定量結果の正本は `node src/bench/cli.ts report`、定性評価の正本は [benchmarks/impressions.md](../benchmarks/impressions.md)。残作業の完了後、本書を `docs/archive/` へ移す。
+> 2026-07-06 更新。マイルストーン1（仕様凍結）・2（ハーネス構築 + E2E 検証）・3 の計測パートは**すべて完了**。残るは結果の docs 反映と公開準備のみ。設計の正本は共通基盤 [design/bench_common_design.md](./design/bench_common_design.md) と implement 固有設計 [design/delegate_implement_bench_design.md](./design/delegate_implement_bench_design.md)、定量結果の正本は `node src/bench/cli.ts report`、定性評価の正本は [benchmarks/impressions.md](../benchmarks/impressions.md)。残作業の完了後、本書を `docs/archive/` へ移す。
 
 ## 現在地
 
@@ -14,10 +14,10 @@
 
 ## 残作業
 
-1. **結果を docs へ**: `report` の集計を永続ドキュメント化する（品質スコア合算 + 効率 Pareto + ハーネス交絡・停滞率の注記。DESIGN.md §5〜§7）
+1. **結果を docs へ**: `report` の集計を永続ドキュメント化する（品質スコア合算 + 効率 Pareto + ハーネス交絡・停滞率の注記。共通基盤の「計測メトリクス」「公平性と妥当性の限界」と implement 固有設計の「採点」）
 2. 1 の完了後、本書と `docs/task-selection.md`（題材選定の検討ログ）を `docs/archive/` へ移す
-3. （任意・マイルストーン4）Web ギャラリー: 各モデル代表ランを Godot Web エクスポートし、**別リポジトリ**の GitHub Pages へ（DESIGN.md §9-4。単一スレッドエクスポート必須、COOP/COEP 不可のため）
-4. 本リポジトリの public 化はラウンド完了後（DESIGN.md §7。公開時点でこのラウンドの仕様・テストは公開済み扱いとなり、以後の再測定はバリアント差し替え）
+3. （任意・マイルストーン4）Web ギャラリー: 各モデル代表ランを Godot Web エクスポートし、**別リポジトリ**の GitHub Pages へ（implement 固有設計の「マイルストーン」内 Web ギャラリー。単一スレッドエクスポート必須、COOP/COEP 不可のため）
+4. 本リポジトリの public 化はラウンド完了後（共通基盤の「公平性と妥当性の限界」。公開時点でこのラウンドの仕様・テストは公開済み扱いとなり、以後の再測定はバリアント差し替え）
 
 ## 実行手順（追試・再計測用）
 
@@ -32,7 +32,7 @@ node src/bench/cli.ts grade --workspace benchmarks/runs/<run-id>/workspace
 node src/bench/cli.ts report
 ```
 
-- モデル ID と実行系分岐は DESIGN.md §2 が正本（prefix 規約: `gpt*` → Codex / `swe*`・`devin-*` → Devin / `composer*`・`cursor-*` → Cursor / それ以外 → Claude）
+- モデル ID と実行系分岐は [design/bench_common_design.md](./design/bench_common_design.md) の「ベンチ構成」が正本（prefix 規約: `gpt*` → Codex / `swe*`・`devin-*` → Devin / `composer*`・`cursor-*` → Cursor / それ以外 → Claude）
 - 並列実行しない（親が同一 Claude 枠を消費し、負荷で時間計測が歪む）
 - Claude 実行系の 3 モデル（Sonnet5 / Opus4.8 / Haiku4.5）と `fable-direct` は親と同じ枠を消費するため最後に回し、枠に余裕がある時間帯に流す
 - 各ラン完了時に `metrics.json` の `outcome` を確認。`stalled` / `timeout` / `failed` は 1 回だけ再実行してよい（それ以上はユーザー承認）。失敗ランの run ディレクトリと metrics は破棄せず残す（停滞率・失敗率も報告対象）
@@ -57,7 +57,7 @@ node src/bench/cli.ts report
 
 ## 関連資料
 
-- 設計正本: `docs/design/DESIGN.md`（対象モデル・計測・採点・公平性・カンニング防止のすべて）
+- 設計正本: `docs/design/bench_common_design.md`（対象モデル・計測・公平性・カンニング防止）と `docs/design/delegate_implement_bench_design.md`（Conveyor Courier 課題仕様・採点・マイルストーン）
 - 定性メモ: `benchmarks/impressions.md`（公開文書になる前提で表現に注意）
 - 上流への貢献（delegate-skills）:
   - [issue #1](https://github.com/oubakiou/delegate-skills/issues/1) 観測性の提案（v0.5.0 で実装済み。レビュー済み文書: docs/feature/delegate-worker-observability.md）

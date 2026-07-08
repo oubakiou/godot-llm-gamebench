@@ -6,7 +6,7 @@
 
 | 場所                           | 状態                                                                                                          |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| DESIGN.md ルーブリック         | 型品質 15 点は「型警告 0 で満点、警告数に応じて減点」（1 件 −3）                                              |
+| implement ベンチのルーブリック | 型品質 15 点は「型警告 0 で満点、警告数に応じて減点」（1 件 −3）                                              |
 | `src/bench/grade.ts`（修正前） | `gdscript/warnings/*=1` を注入した一時プロジェクトで `--import` を実行し、stderr の `/UNTYPED/i` 行をカウント |
 | 観測結果                       | Godot 4.4.1 は警告値 1 では headless の stderr に何も出力しない → カウントは常に 0                            |
 
@@ -68,6 +68,6 @@ node src/bench/cli.ts grade --workspace benchmarks/tasks/conveyor-courier/refere
 
 ## 7. 関連
 
-- [DESIGN.md](../design/DESIGN.md) — 採点パイプライン §「型品質チェック」（本修正に合わせて記述更新済み）
+- [delegate_implement_bench_design.md](../design/delegate_implement_bench_design.md) — 「採点」（本修正に合わせて記述更新済み）
 - 発見の経緯: gdscript-quality skill の headless 検証スクリプト開発中に、警告値 1 が headless で
   無音であることを実験で特定（`.temp/skill-dev/gdscript-quality/evals/RESULTS.md`）

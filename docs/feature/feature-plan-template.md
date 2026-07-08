@@ -7,11 +7,11 @@
 > **書き方の原則**:
 >
 > - **判断の理由を残す**: 何を採用したかだけでなく、なぜ他案を採らなかったかを §5 に残す
-> - **DESIGN.md との関係を明示**: 完了時に DESIGN.md のどの章を更新するかを §9 に書く
+> - **設計ドキュメントとの関係を明示**: 完了時に `docs/design/` のどの文書・章を更新するかを §9 に書く
 > - **Step は小さく切る**: 1 PR / 1 セッションで完了できる粒度を 1 Step にする
 > - **公開仕様は遅延させない**: README、公開 API、CLI、package exports が変わる Step では同じ commit でドキュメントも更新する
 
-{DESIGN.md の該当章 / README の該当項目} に対応するための設計判断と実装手順をまとめる。完了後は DESIGN.md に永続情報を移し、本ファイルは archive する。
+{docs/design/ の該当設計ドキュメント / README の該当項目} に対応するための設計判断と実装手順をまとめる。完了後は該当する設計ドキュメントに永続情報を移し、本ファイルは archive する。
 
 ## 1. 対応スコープ
 
@@ -82,12 +82,12 @@
 
 成果物: {配布物 / hook 動作}
 
-### Step 5: (未着手) DESIGN.md 反映と archive 化
+### Step 5: (未着手) 設計ドキュメント反映と archive 化
 
-- DESIGN.md に永続情報を移す
+- `docs/design/` の該当設計ドキュメントに永続情報を移す
 - 本ドキュメントを `docs/archive/{topic}.archive.md` にリネームする
 
-成果物: DESIGN.md 更新 + archive（archive 化はユーザー確認後）
+成果物: 設計ドキュメント更新 + archive（archive 化はユーザー確認後）
 
 ## 5. 設計判断
 
@@ -133,7 +133,7 @@
 - 既存公開 API が意図せず変わっていない
 - 新規挙動に対応するテストがある
 - `npm run pack:check` が通る
-- DESIGN.md / README / README_ja が実装と一致している
+- `docs/design/` の該当設計ドキュメント / README / README_ja が実装と一致している
 
 ## 8. 想定リスクと回避策
 
@@ -146,6 +146,6 @@
 
 ## 9. 参考
 
-- [DESIGN.md](../design/DESIGN.md)
+- [docs/design/](../design/)
 - [development.md](../design/development.md)
 - {外部仕様 / ライブラリ docs}

@@ -101,7 +101,7 @@ const loadRuns = (): RunSummary[] => {
       if (metrics === null || grade === null) {
         return []
       }
-      // エイリアス haiku のランはハーネス検証専用（DESIGN §8）で集計から除外する。
+      // エイリアス haiku のランはハーネス検証専用で集計から除外する。
       // 正式ランはフル ID claude-haiku-4-5 で実行され、この除外に当たらない
       if (metrics.model === 'haiku') {
         return []

@@ -22,7 +22,7 @@
 - **品質**: 100 点満点のルーブリックで、全項目を自動採点する。隠しテストに対する機能正当性（60 点）、固定 seed 下の決定性（10 点）、型警告の少なさ（15 点）、import・起動 smoke などのプロジェクト健全性（15 点）
 - **効率**: 所要時間、委譲往復回数、親側消費トークン、子側消費トークン、単価表による換算コスト（単価・実測値がない場合は N/A として報告する）
 
-ルーブリックの詳細、対象モデル一覧、公平性・カンニング防止の設計は [docs/design/DESIGN.md](docs/design/DESIGN.md) を参照。計測結果はまだ無いため、本書に結果セクションは無い。
+ルーブリックの詳細は [docs/design/delegate_implement_bench_design.md](docs/design/delegate_implement_bench_design.md)、対象モデル一覧と公平性・カンニング防止の設計は [docs/design/bench_common_design.md](docs/design/bench_common_design.md) を参照。計測結果はまだ無いため、本書に結果セクションは無い。
 
 ## bench コマンド
 
@@ -45,7 +45,10 @@
 │  │  └─ hidden-tests/           # 隠しテスト（子モデルには渡さない）
 │  └─ runs/                      # ラン成果物（gitignore。集計レポートのみコミット）
 ├─ docs/
-│  ├─ design/DESIGN.md           # ベンチ設計（課題仕様、実行アーキテクチャ、計測・採点）
+│  ├─ design/bench_common_design.md
+│  │                               # 共通基盤（対象モデル、実行アーキテクチャ、計測、公平性）
+│  ├─ design/delegate_implement_bench_design.md
+│  │                               # Conveyor Courier ベンチ（課題仕様、採点、マイルストーン）
 │  └─ design/development.md      # 開発基盤（テンプレート由来）
 ├─ AGENTS.md / CLAUDE.md          # エージェント向け指示
 └─ package.json
@@ -65,7 +68,8 @@
 
 ## ドキュメント
 
-- [docs/design/DESIGN.md](docs/design/DESIGN.md) — ベンチ設計の全体（課題仕様、実行アーキテクチャ、計測、採点、公平性の限界）
+- [docs/design/bench_common_design.md](docs/design/bench_common_design.md) — 共通基盤（対象モデル、実行アーキテクチャ、計測、公平性の限界）
+- [docs/design/delegate_implement_bench_design.md](docs/design/delegate_implement_bench_design.md) — Conveyor Courier ベンチ（課題仕様、採点、マイルストーン）
 - [docs/design/development.md](docs/design/development.md) — 開発セットアップ、検証コマンド、エージェント hook
 
 ## ライセンス

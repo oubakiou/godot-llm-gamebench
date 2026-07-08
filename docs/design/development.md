@@ -60,9 +60,12 @@ if (import.meta.vitest) {
 
 ## 設計ドキュメント
 
-永続的な設計判断は [DESIGN.md](./DESIGN.md) に集約する。ビルドと package 出力の詳細は [build-pipeline.md](./build-pipeline.md)、今後の方向性は [roadmap.md](./roadmap.md) を参照。
+永続的な設計判断は `docs/design/` 配下に集約する。委譲ベンチ共通基盤は [bench_common_design.md](./bench_common_design.md)、各ベンチ固有の設計は `delegate_*_bench_design.md` に置く。ビルドと package 出力の詳細は [build-pipeline.md](./build-pipeline.md)、今後の方向性は [roadmap.md](./roadmap.md) を参照。
 
-- [DESIGN.md](./DESIGN.md) — ベンチマーク設計（課題仕様、実行アーキテクチャ、計測・採点）と開発基盤
+- [bench_common_design.md](./bench_common_design.md) — 委譲ベンチ共通基盤（対象モデル、実行アーキテクチャ、計測、公平性）
+- [delegate_implement_bench_design.md](./delegate_implement_bench_design.md) — delegate-implement ベンチ（Conveyor Courier）の課題仕様、採点、マイルストーン
+- [delegate_explore_bench_design.md](./delegate_explore_bench_design.md) — delegate-explore ベンチの課題仕様、採点、マイルストーン
+- [delegate_review_bench_design.md](./delegate_review_bench_design.md) — delegate-review ベンチの課題仕様、採点、マイルストーン
 - [build-pipeline.md](./build-pipeline.md) — TypeScript build、`dist/`、npm tarball
 - [roadmap.md](./roadmap.md) — テンプレート改善の候補
 
@@ -82,7 +85,7 @@ if (import.meta.vitest) {
 ### 設計・実装プラン
 
 - 大きめの機能追加や公開仕様変更は [docs/feature/feature-plan-template.md](../feature/feature-plan-template.md) をコピーし、`docs/feature/<topic>.md` として起票する
-- 完了後は DESIGN.md / README / README_ja に永続情報を移し、`docs/archive/<topic>.archive.md` にリネームする
+- 完了後は `docs/design/` の該当設計ドキュメント / README / README_ja に永続情報を移し、`docs/archive/<topic>.archive.md` にリネームする
 
 ### リファクタリング
 
