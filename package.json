@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "2.1.200",
-    "@openai/codex": "0.142.3",
+    "@openai/codex": "0.144.1",
     "@types/node": "^24.0.0",
     "md2idx": "^0.2.0",
     "mdxg-redline": "^0.1.3",
