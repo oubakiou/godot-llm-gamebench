@@ -11,6 +11,7 @@ interface PriceRow {
 }
 
 interface RunSummary {
+  runId: string
   model: string
   outcome: Metrics['outcome']
   quality: number
@@ -43,6 +44,26 @@ const median = (values: number[]): number | null => {
 
 const fmt = (value: number | null, digits = 2): string =>
   value === null ? 'N/A' : value.toFixed(digits)
+
+// 同一 (model, rep) の再計測で旧ラウンドの completed が二重計上されないよう、
+// rep ごとに run_id（先頭がゼロ埋め UTC タイムスタンプで辞書順 = 時系列）最大の
+// completed だけを採用する。rep が読めない run_id は安全側で全件採用する
+export const adoptLatestCompletedPerRep = (completed: RunSummary[]): RunSummary[] => {
+  const latestByRep = new Map<number, RunSummary>()
+  const unparsable: RunSummary[] = []
+  for (const run of completed) {
+    const rep = /-rep(?<rep>\d+)$/.exec(run.runId)?.groups?.rep
+    if (rep === undefined) {
+      unparsable.push(run)
+    } else {
+      const current = latestByRep.get(Number(rep))
+      if (current === undefined || run.runId > current.runId) {
+        latestByRep.set(Number(rep), run)
+      }
+    }
+  }
+  return [...latestByRep.values(), ...unparsable].toSorted((a, b) => a.runId.localeCompare(b.runId))
+}
 
 const readJson = <T>(path: string): T | null => {
   try {
@@ -115,6 +136,7 @@ const loadRuns = (): RunSummary[] => {
           outcome: metrics.outcome,
           quality: grade.score.total,
           roundTrips: metrics.round_trips,
+          runId: metrics.run_id,
           totalCostUsd: childCost === null || parentCost === null ? null : childCost + parentCost,
           wallClockMs: metrics.wall_clock_ms,
         },
@@ -132,7 +154,9 @@ export const buildReportMarkdown = (runs: RunSummary[] = loadRuns()): string => 
     .map(([model, modelRuns]) => {
       // 中央値は completed ランのみで計算する（打ち切りランの残存値や null を混ぜない）。
       // 非 completed は試行数と内訳（信頼性メトリクス）として別列で報告する
-      const completed = modelRuns.filter((run) => run.outcome === 'completed')
+      const completed = adoptLatestCompletedPerRep(
+        modelRuns.filter((run) => run.outcome === 'completed')
+      )
       const nonCompleted = modelRuns.filter((run) => run.outcome !== 'completed')
       const breakdown =
         nonCompleted.length === 0
@@ -148,8 +172,10 @@ export const buildReportMarkdown = (runs: RunSummary[] = loadRuns()): string => 
       const costMedian = costs.length === completed.length ? median(costs) : null
       return [
         model,
+        // Completed は採用ラン数（rep ごとに最新 completed のみ）、Attempts は
+        // 再計測で置き換えられた completed も含む全試行数
         `${String(completed.length)}/${String(modelRuns.length)}`,
-        // 品質は completed ラン合計（各モデル 3 反復で最大 300）。反復間の再現性を
+        // 品質は採用ラン合計（各モデル 3 反復で最大 300）。反復間の再現性を
         // 評価へ含めるための合算で、completed 不足は 0 埋めせず Completed/Attempts 列で読む
         fmt(completed.reduce((sum, run) => sum + run.quality, 0)),
         fmt(median(completed.map((run) => run.wallClockMs / 1000)), 1),
@@ -186,6 +212,35 @@ if (import.meta.vitest) {
     })
   })
 
+  const completedBase: Omit<RunSummary, 'runId' | 'quality'> = {
+    childTokens: 100,
+    model: 'm',
+    outcome: 'completed',
+    roundTrips: 1,
+    totalCostUsd: 0.1,
+    wallClockMs: 1000,
+  }
+
+  describe('adoptLatestCompletedPerRep', () => {
+    it('keeps only the latest completed run per rep', () => {
+      const adopted = adoptLatestCompletedPerRep([
+        { ...completedBase, quality: 10, runId: '20260705T000000Z-m-rep0' },
+        { ...completedBase, quality: 88, runId: '20260710T110000Z-m-rep0' },
+        { ...completedBase, quality: 50, runId: '20260710T090000Z-m-rep0' },
+        { ...completedBase, quality: 20, runId: '20260705T010000Z-m-rep1' },
+      ])
+      expect(adopted.map((run) => run.quality)).toEqual([20, 88])
+    })
+
+    it('keeps runs whose rep cannot be parsed', () => {
+      const adopted = adoptLatestCompletedPerRep([
+        { ...completedBase, quality: 1, runId: '20260705T000000Z-m-norep' },
+        { ...completedBase, quality: 2, runId: '20260705T010000Z-m-norep' },
+      ])
+      expect(adopted).toHaveLength(2)
+    })
+  })
+
   describe('report aggregation', () => {
     it('prints model medians as markdown', () => {
       const markdown = buildReportMarkdown([
@@ -195,6 +250,7 @@ if (import.meta.vitest) {
           outcome: 'completed',
           quality: 10,
           roundTrips: 1,
+          runId: '20260705T000000Z-b-rep0',
           totalCostUsd: 0.1,
           wallClockMs: 1000,
         },
@@ -204,6 +260,7 @@ if (import.meta.vitest) {
           outcome: 'completed',
           quality: 30,
           roundTrips: 3,
+          runId: '20260705T010000Z-b-rep1',
           totalCostUsd: 0.3,
           wallClockMs: 3000,
         },
@@ -213,6 +270,7 @@ if (import.meta.vitest) {
           outcome: 'stalled',
           quality: 99,
           roundTrips: 9,
+          runId: '20260705T020000Z-b-rep2',
           totalCostUsd: null,
           wallClockMs: 9000,
         },
@@ -222,12 +280,21 @@ if (import.meta.vitest) {
           outcome: 'completed',
           quality: 20,
           roundTrips: 2,
+          runId: '20260705T000000Z-a-rep0',
           totalCostUsd: null,
           wallClockMs: 2000,
         },
       ])
       expect(markdown).toContain('| a | 1/1 | 20.00 | 2.0 | 2.0 | 200 | N/A | - |')
       expect(markdown).toContain('| b | 2/3 | 40.00 | 2.0 | 2.0 | 200 | 0.2000 | 1 stalled |')
+    })
+
+    it('counts superseded completed runs in attempts but not in aggregates', () => {
+      const markdown = buildReportMarkdown([
+        { ...completedBase, quality: 40, runId: '20260705T000000Z-m-rep0' },
+        { ...completedBase, quality: 90, runId: '20260710T110000Z-m-rep0' },
+      ])
+      expect(markdown).toContain('| m | 1/2 | 90.00 |')
     })
   })
 }

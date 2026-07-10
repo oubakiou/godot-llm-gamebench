@@ -128,15 +128,17 @@ const estimatedTokensFromDelegate = (delegateMetricsJsonl: string): ChildTokens 
 // 旧レイアウトのランや usage 欠損ランでは従来のフォールバックが効く
 const usageFromObserveFiles = (delegateWorkDir: string): ChildTokens | null => {
   const observeFiles = walkFiles(delegateWorkDir).filter((file) => file.endsWith('_observe.json'))
-  // prepared のまま dispatch されなかった observe（親が request を作り直したケース）は
-  // 子プロセスを持たないため、usage の全数チェックの分母に含めない
+  // dispatch されず子プロセスを持たない observe（親が request を作り直したケース）は
+  // usage の全数チェックの分母に含めない。delegate-skills はこれを prepared のまま残すか、
+  // 新しい版では superseded にマークする
   let unreadable = 0
   const dispatched: JsonRecord[] = []
   for (const file of observeFiles) {
     try {
       const record = JSON.parse(readFileSync(file, 'utf8')) as JsonRecord
       const state = typeof record.state === 'object' && record.state !== null ? record.state : {}
-      if ((state as JsonRecord).phase !== 'prepared') {
+      const phase = (state as JsonRecord).phase
+      if (phase !== 'prepared' && phase !== 'superseded') {
         dispatched.push(record)
       }
     } catch {
@@ -292,6 +294,37 @@ if (import.meta.vitest) {
         input: 130,
         measurement: 'measured',
         output: 25,
+      })
+      rmSync(dir, { force: true, recursive: true })
+    })
+
+    it('excludes never-dispatched observes from the usage completeness check', () => {
+      const dir = '.temp/vitest-observe-superseded'
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(
+        `${dir}/delegate_a_observe.json`,
+        JSON.stringify({
+          state: { phase: 'superseded' },
+        })
+      )
+      writeFileSync(
+        `${dir}/delegate_b_observe.json`,
+        JSON.stringify({
+          state: { phase: 'prepared' },
+        })
+      )
+      writeFileSync(
+        `${dir}/delegate_c_observe.json`,
+        JSON.stringify({
+          state: { phase: 'ended' },
+          usage: { cost_usd: 0.5, input_tokens: 100, measurement: 'measured', output_tokens: 20 },
+        })
+      )
+      expect(collectChildTokens(dir, `${dir}/none.jsonl`, 'claude')).toEqual({
+        cost_usd: 0.5,
+        input: 100,
+        measurement: 'measured',
+        output: 20,
       })
       rmSync(dir, { force: true, recursive: true })
     })
