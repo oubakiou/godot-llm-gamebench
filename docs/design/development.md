@@ -64,7 +64,6 @@ if (import.meta.vitest) {
 
 - [bench_common_design.md](./bench_common_design.md) — 委譲ベンチ共通基盤（対象モデル、実行アーキテクチャ、計測、公平性）
 - [delegate_implement_bench_design.md](./delegate_implement_bench_design.md) — delegate-implement ベンチ（Conveyor Courier）の課題仕様、採点、マイルストーン
-- [delegate_explore_bench_design.md](./delegate_explore_bench_design.md) — delegate-explore ベンチの課題仕様、採点、マイルストーン
 - [delegate_review_bench_design.md](./delegate_review_bench_design.md) — delegate-review ベンチの課題仕様、採点、マイルストーン
 - [build-pipeline.md](./build-pipeline.md) — TypeScript build、`dist/`、npm tarball
 - [roadmap.md](./roadmap.md) — テンプレート改善の候補
