@@ -63,7 +63,7 @@
 - rep0: completed 76.18（RNG 消費規則を落とし決定性 0 + 型警告 4 件）・10.0 分 / rep1: 初回 **stalled**（無進捗 10 分で打ち切り、残存採点 80.09、スプリッタ系 6 テスト失敗）→ 再実行 completed 88・11.1 分 / rep2: completed 94（型警告 2 件のみ）・16.5 分
 - 入力トークンが gpt-5.5 の約 2〜4 倍（698k〜1,533k）で時間も 10〜17 分と長い。「安いが遅く、たまに落ちる/停滞する」プロファイル
 - Codex 実行系でも停滞が起きることを本計測で初確認（Claude 実行系固有ではなかった）
-- コード品質（3 ラン精査、△）: 3 ランとも中核の `_items` が無型という共通の弱点を持ち、rep0 は `as ItemState` キャスト頻出、rep1 は `_cells: Array[int]`（enum を int 運用）、rep2 は完全無型の二重配列と、反復が進むごとに型付けが後退した
+- コード品質（3 ラン精査、△）: 3 ランとも中核の `_items` が無型という共通の弱点を持ち、rep0 は `as ItemState` キャスト頻出、rep1 は `_cells: Array[int]`（enum を int 運用）、rep2 は完全無型の二重配列と、反復が進むごとに型付けが後退した。判定者クロスチェックで乖離（sol 3.5）が出たため、サマリー表の代表値は Fable 裁定 3.3（クロスチェック欄参照）
 
 ### devin-glm-5.2（Devin CLI）
 
@@ -99,7 +99,7 @@
 
 - 事前に懸念していた枠逼迫時の停滞は一度も発生しなかった（枠に余裕がある時間帯に実行）
 - stream-json 化（delegate-skills v0.6.0）の効果で、実測コスト付きの子トークンが取れた（$1.28〜$1.39/ラン、in 3.8k〜4.1k / out 35.7k〜40.1k。Claude 実行系共通の恩恵で、後続の opus4.8・claude-haiku-4-5 でも同様に実測）。Codex 系と異なり入力にキャッシュ読みが含まれない模様で、トークン構成の直接比較には注意
-- コード品質（3 ラン精査、○）: rep1 は `_grid: Array[CellKind]`・`_items: Array[_ItemState]`・`BELT_KEYS: Array[BoardModel.CellKind]` の全面型付けで委譲モデル中の最上位級（◎ 相当）だが、rep0/rep2 は `_grid: Array[int]`・`_items: Dictionary` と内部で型を放棄。単一ラン精査（rep1、◎）は上振れだった。ぶれの軸は「内部状態が enum 型を保つか int に落ちるか」
+- コード品質（3 ラン精査、○）: rep1 は `_grid: Array[CellKind]`・`_items: Array[_ItemState]`・`BELT_KEYS: Array[BoardModel.CellKind]` の全面型付けで委譲モデル中の最上位級（◎ 相当）だが、rep0/rep2 は `_grid: Array[int]`・`_items: Dictionary` と内部で型を放棄。単一ラン精査（rep1、◎）は上振れだった。ぶれの軸は「内部状態が enum 型を保つか int に落ちるか」。判定者クロスチェックで乖離（sol 3.3）が出たため、サマリー表の代表値は Fable 裁定 3.8（クロスチェック欄参照）
 
 ### claude-opus-4-8（Claude CLI）
 
@@ -265,7 +265,7 @@ delegate-skills [issue #15](https://github.com/oubakiou/delegate-skills/issues/1
 本計測: **85 / 83.18（旧採用） / 85（合算 253.18、旧ラウンドと同値）**。completed 2 ラン は 8.4〜9.5 分、実測 in 176k〜237k / out 16k〜19k と Cursor 系最大のトークン消費。型警告は 29 / 74 件と引き続き全モデル中で最も振れる。
 
 - **rep1 は 4 試行すべて stalled（うちクリーン窓で 3 回連続）で再計測を断念し、旧ラウンドの completed（estimated）を継続採用**。クリーン窓の 3 回は同一機構を確認済み: 子は実装を完成させ res.json まで書くのに、quit 処理のない `godot --headless --script tests/acceptance.gd` を自ら起動して待ち続け、watchdog が 17 分で kill（issue #7 の cursor 変種）。残存採点は毎回 85 で「成果は出るが完了報告に到達しない」再現性のある行動特性。リクエストは timeout 付き実行と quit 処理の付与を明示指示しており、それを毎回無視する形。混雑窓では rep0 も同型の子側 stall を 1 回起こしており（撃ち直しで completed）、**ラウンド 3 の子側停滞 5 件はすべて gemini**。原因の深掘りはユーザー判断で保留中
-- コード品質（3 ラン精査、▲〜△）: 平均 2.8。新規 2 ラン は 2.5 / 2.0 — rep0 は `_map[y][x] as CellKind` のキャスト依存 + 定数皆無、rep2 は View が Model の private フィールド（`board._splitter_toggles`）へ直接アクセスし Model/View 分離が破綻。旧採用 rep1 は 4.0（typed Array 貫徹・キャストなし、ただし magic number 散在）で、ラン間振れ幅（2.0〜4.0）は全モデル最大。定数化しない癖は 3 ラン共通で旧ラウンドから不変、委譲モデル中最下位を維持
+- コード品質（3 ラン精査、▲〜△）: 平均 2.8。新規 2 ラン は 2.5 / 2.0 — rep0 は `_map[y][x] as CellKind` のキャスト依存 + 定数皆無、rep2 は View が Model の private フィールド（`board._splitter_toggles`）へ直接アクセスし Model/View 分離が破綻。旧採用 rep1 は 4.0（typed Array 貫徹・キャストなし、ただし magic number 散在）で、ラン間振れ幅（2.0〜4.0）は全モデル最大。定数化しない癖は 3 ラン共通で旧ラウンドから不変、委譲モデル中最下位を維持。判定者クロスチェックで rep1 に全体最大の乖離（sonnet 4.0 vs sol 2.5）が出たため、サマリー表の代表値は Fable 裁定 2.5（クロスチェック欄参照）
 
 ### cursor-kimi-k2.7-code（ラウンド 3）
 
@@ -338,7 +338,7 @@ delegate-skills [issue #15](https://github.com/oubakiou/delegate-skills/issues/1
 
 ## 判定者クロスチェック（2026-07-12、gpt-5.6-sol による本計測全採用ランのコード品質再精査）
 
-追試 1・2 のクロスチェックで判定者間乖離の存在が分かったため、本計測の全採用ランにも gpt-5.6-sol による再精査を行った。手法: 5 段階の全帯域をカバーする 5 アンカー（fable-direct rep0 ≈ 5.0 / luna rep0 4.5 / luna rep2 3.5 / luna rep1 3.0 / cursor-gemini rep0 ≈ 2.0。追試 1 で判明した「低評価帯アンカーの欠落」を修正済み）を与え、アンカー 5 ランを除く 50 workspace を 3 バッチで採点（gpt-5.6-luna はアンカー使用のため対象外だが、同一コードは effort 追試クロスチェックで精査済み）。**sol 自身の 3 ランも対象に含まれる**（sonnet と対称の自己判定を含む点は開示。結果は +0.1 と自己有利方向の乖離なし）。
+追試 1・2 のクロスチェックで判定者間乖離の存在が分かったため、本計測の全採用ランにも gpt-5.6-sol による再精査を行った。手法: 5 段階の全帯域をカバーする 5 アンカー（fable-direct rep0 ≈ 5.0 / luna rep0 4.5 / luna rep2 3.5 / luna rep1 3.0 / cursor-gemini rep0 ≈ 2.0。追試 1 で判明した「低評価帯アンカーの欠落」を修正済み）を与え、アンカー 5 ランを除く 50 workspace を 3 バッチで採点（gpt-5.6-luna はアンカー使用のため対象外だが、同一コードは effort 追試クロスチェックで精査済み）。**sol 自身の 3 ランも対象に含まれる**（sonnet と対称の自己判定を含む点は開示。結果は +0.1 と自己有利方向の乖離なし）。なお事後検証で、低評価帯アンカーに指定したラウンド 3 の gemini rep0 へ**旧ラウンド rep0 の評（2.0・無型 var 多発）を誤って付与していた**ことが判明した（当該ランの sonnet 実評は 2.5 で、説明文も別ランのもの）。低評価帯の較正が約 0.5 下方に歪んだ可能性があり、sol の下位帯スコア（gemini 2.3 / haiku 2.5）はやや辛めに出ている余地がある（条件代表値への影響はなし: gemini の裁定値 2.5 は正しい per-run で再計算しても不変）。
 
 | モデル                 | sonnet-5 判定（正本） |  sol 判定 |   差 |
 | ---------------------- | --------------------: | --------: | ---: |
@@ -363,7 +363,7 @@ delegate-skills [issue #15](https://github.com/oubakiou/delegate-skills/issues/1
 
 - **概況**: 18 条件中 15 が ±0.5 以内で一致し、序列の大勢（fable-direct / kimi / sol / terra / swe-1.7 が上位帯、gemini / haiku が下位帯）は両判定者で共通。5 段階スコアには判定者間 ±0.5 程度の誤差帯がある、という追試での観察が全体でも成立
 - **最大乖離は claude-sonnet-5（4.3 vs 3.3）**。Fable 見解（rep0 / rep2 を直接読解）: 両ランとも `_grid: Array[int]` + `_items: Dictionary`（生）+ splitter 生 Dictionary で、ルーブリック 3 の定義（enum・class を宣言しつつ内部表現で型を放棄）に該当し、両判定者が 4.0 で一致した追試 2 の opus@gq（型放棄が grid のみ）より明確に下。定数完備・typed class・API 型付けを加味した Fable 裁定は rep0/rep2 ≈ 3.5・rep1 ≈ 4.5 の**平均 ≈ 3.8**（原判定 4.3 は上振れ、sol 3.3 はやや辛め）。**唯一、誤差帯を超えた乖離が「原判定者自身の実装」で自己有利方向に出た**ことは自己評価バイアスの仮説と整合する。ただし追試 2 の新規 sonnet ランでは両判定者が per-run 一致（4.2）しており、当時の較正アンカー構成（記録なし）との交絡も否定できないため断定はしない。サマリー表の代表値にはこの**裁定値 3.8 を採用済み**（両判定値は括弧で併記）
-- 準大の乖離 2 件も Fable 裁定を実施（2026-07-12、当該 5 workspace を直接読解）。**gpt-5.4-mini = 3.3**（rep0 は `_cells: Array[CellKind]` + typed class + 定数完備で `_items` のみ無型の 4.0、rep1/rep2 は生 Dictionary・無型コンテナと仕様定数の直書きで 3.0。sonnet-5 の 2.8 は辛すぎ、sol の 3.5 は甘すぎ）。**cursor-gemini-3.1-pro = 2.5**（rep1 はコンテナ typed だが定数ゼロ + 無型ローカル約 28 箇所で 3.0、rep2 は無型二重配列 + 定数ゼロで 2.5。両判定の平均と偶然一致）。乖離機構は既知の判定者傾向（sonnet-5 は内部の型放棄を、sol は無型ローカルの広がりをそれぞれ重く減点）で、中間帯は双方向に ±0.5〜1.0 ぶれる
+- 準大の乖離 2 件も Fable 裁定を実施（2026-07-12、当該 5 workspace を直接読解）。**gpt-5.4-mini = 3.3**（rep0 は `_cells: Array[CellKind]` + typed class + 定数完備で `_items` のみ無型の 4.0、rep1/rep2 は生 Dictionary・無型コンテナと仕様定数の直書きで 3.0。sonnet-5 の 2.8 は辛すぎ、sol の 3.5 は甘すぎ）。**cursor-gemini-3.1-pro = 2.5**（乖離は旧採用 rep1 のみで sonnet 4.0 vs sol 2.5 = 全体最大の 1.5 差。Fable 裁定はコンテナ typed（`Array[CellKind]` / `Array[InternalItem]`）だが定数ゼロ + 無型ローカル約 28 箇所で 3.0。rep2 は両判定 2.0 一致で裁定不要、rep0 は sol がアンカー使用のため sonnet 評 2.5 を単独採用し、条件値 = (2.5 + 3.0 + 2.0)/3 = 2.5）。乖離機構は既知の判定者傾向（sonnet-5 は内部の型放棄を、sol は無型ローカルの広がりをそれぞれ重く減点）で、中間帯は双方向に ±0.5〜1.0 ぶれる
 - 代表値の方針（2026-07-12 のユーザー判断）: (1) 乖離が誤差帯（±0.5）を超え Fable 裁定がある行は裁定値（本計測の claude-sonnet-5 = 3.8 / gpt-5.4-mini = 3.3 / cursor-gemini-3.1-pro = 2.5、追試 1 の gpt-5.6-luna@xhigh = 3.8）、(2) 裁定がなく判定が割れた行は両判定の平均（小数第 1 位切り捨て）、(3) sol 評が無い行は sonnet 評単独。各モデル欄の記述は sonnet-5 判定に基づくため、序列に関わる結論を引用する際は本欄の両判定値を併記することを推奨
 
 ## ベンチ対象外モデル（ハーネス検証・準備で使用）
