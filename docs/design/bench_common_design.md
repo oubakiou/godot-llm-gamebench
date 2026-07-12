@@ -58,7 +58,7 @@ orchestrator (TypeScript CLI)
       3. 親を headless 起動:
          claude -p <親playbook> --model claude-fable-5 --output-format json
            └─ 親が対象 delegate skill で子へ委譲
-      4. メトリクス収集 → 採点パイプライン → benchmarks/runs/<run-id>/ に保存
+      4. メトリクス収集 → 採点パイプライン → benchmarks/<round>/runs/<run-id>/ に保存
 ```
 
 ### 親 playbook（固定プロンプト）
@@ -140,15 +140,16 @@ orchestrator (TypeScript CLI)
 ```text
 src/                                 # orchestrator / metrics 収集 / 採点ドライバ（TypeScript, in-source test）
 benchmarks/
-  impressions.md                     # 委譲先モデルの定性所感（委譲のたびに追記）
+  <round-id>/                        # 計測ラウンド。スコア比較は同一ラウンド内に限定（例: 202607_delegate_implement_bench）
+    impressions.md                   # 委譲先モデルの定性所感（委譲のたびに追記）
+    runs/                            # ラン成果物（gitignore。集計レポートのみコミット）
+      <run-id>/
+        workspace/                   # 使い捨ての独立リポジトリ（子の作業場所）
+        delegate/                    # DELEGATE_METRICS_FILE / DELEGATE_WORK_DIR の出力
+        metrics.json
+        grade.json
   tasks/
-    <bench-task>/                    # ベンチ種別ごとの課題正本・reference / hidden oracle
-  runs/                              # ラン成果物（gitignore。集計レポートのみコミット）
-    <run-id>/
-      workspace/                     # 使い捨ての独立リポジトリ（子の作業場所）
-      delegate/                      # DELEGATE_METRICS_FILE / DELEGATE_WORK_DIR の出力
-      metrics.json
-      grade.json
+    <bench-task>/                    # ベンチ種別ごとの課題正本・reference / hidden oracle。ラウンド横断で共有
 ```
 
 ## 6. 開発基盤（テンプレート由来）

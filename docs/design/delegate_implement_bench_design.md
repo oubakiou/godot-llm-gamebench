@@ -117,12 +117,13 @@ benchmarks/
     variants/                        # 学習汚染対策の仕様バリアント
     reference/                       # リファレンス実装（Godot プロジェクト）
     hidden-tests/                    # 隠しテスト（自己完結ランナー）。子モデルには渡さない
-  runs/
-    <run-id>/
-      workspace/                     # 使い捨ての独立リポジトリ（子の作業場所）
-      delegate/                      # DELEGATE_METRICS_FILE / DELEGATE_WORK_DIR の出力
-      metrics.json
-      grade.json
+  202607_delegate_implement_bench/
+    runs/
+      <run-id>/
+        workspace/                   # 使い捨ての独立リポジトリ（子の作業場所）
+        delegate/                    # DELEGATE_METRICS_FILE / DELEGATE_WORK_DIR の出力
+        metrics.json
+        grade.json
 ```
 
 ## 7. マイルストーン

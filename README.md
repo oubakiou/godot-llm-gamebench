@@ -28,7 +28,7 @@ See [docs/design/delegate_implement_bench_design.md](docs/design/delegate_implem
 
 ### 202607_delegate_implement_bench (July 2026)
 
-Canonical results: [benchmarks/impressions.md](benchmarks/impressions.md) (Japanese — summary table, per-model notes, measurement history, follow-up A/Bs, and the judge cross-check).
+Canonical results: [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md) (Japanese — summary table, per-model notes, measurement history, follow-up A/Bs, and the judge cross-check).
 
 | Model                          | Auto-graded score (sum) | Code quality (sonnet, sol)                                                                                                             | Parent + child cost (median)           | Wall clock (median) | Note                                                                                                          |
 | ------------------------------ | ----------------------: | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ------------------: | ------------------------------------------------------------------------------------------------------------- |
@@ -57,7 +57,7 @@ Baseline condition (does not go through the delegation protocol; do not compare 
 | ---------------------------- | ----------------------: | -------------------------------------------------------- | ---------------------------------- | ------------------: | ------------------------------------------------ |
 | fable-direct (no delegation) |                  300.00 | 4.6 (4.7, 4.5) — stable across runs, top type discipline | $2.62 + $0 (total $2.62, measured) |             5.7 min | Baseline: the parent (Fable) implements directly |
 
-Metric definitions (grading rubric, cost accounting, and the two-judge + operator-adjudication scheme behind the code-quality column), plus follow-up 1 (reasoning effort A/B), follow-up 2 (gdscript-quality skill A/B), and the judge cross-check, are all in [benchmarks/impressions.md](benchmarks/impressions.md).
+Metric definitions (grading rubric, cost accounting, and the two-judge + operator-adjudication scheme behind the code-quality column), plus follow-up 1 (reasoning effort A/B), follow-up 2 (gdscript-quality skill A/B), and the judge cross-check, are all in [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md).
 
 ## Bench commands
 
@@ -73,12 +73,14 @@ Metric definitions (grading rubric, cost accounting, and the two-judge + operato
 .
 ├─ src/bench/                    # Orchestrator: run / grade / report CLI (TypeScript, in-source test)
 ├─ benchmarks/
-│  ├─ impressions.md             # Qualitative notes on each delegated child model
-│  ├─ tasks/conveyor-courier/
-│  │  ├─ prompt.md               # Frozen task prompt handed to child models
-│  │  ├─ reference/              # Reference implementation (Godot project, not shown to children)
-│  │  └─ hidden-tests/           # Hidden test runner (not shown to children)
-│  └─ runs/                      # Run artifacts (gitignored; only aggregate reports are committed)
+│  ├─ tasks/                     # Shared task sources across rounds
+│  │  └─ conveyor-courier/
+│  │     ├─ prompt.md            # Frozen task prompt handed to child models
+│  │     ├─ reference/           # Reference implementation (Godot project, not shown to children)
+│  │     └─ hidden-tests/        # Hidden test runner (not shown to children)
+│  └─ 202607_delegate_implement_bench/
+│     ├─ impressions.md          # Qualitative notes on each delegated child model
+│     └─ runs/                   # Run artifacts (gitignored; only aggregate reports are committed)
 ├─ docs/
 │  ├─ design/bench_common_design.md
 │  │                               # Shared benchmark foundation: roster, architecture, measurement, fairness

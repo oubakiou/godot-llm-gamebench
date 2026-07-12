@@ -2,11 +2,15 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { gradeWorkspace } from './grade.ts'
-import { buildReportMarkdown } from './report.ts'
+import { DEFAULT_BENCH_ROUND, isValidBenchRound } from './paths.ts'
+import { buildReportMarkdown, loadRuns } from './report.ts'
 import { runBenchmark } from './run.ts'
 
 const usage = (): never => {
-  console.error('Usage: node src/bench/cli.ts <run|grade|report> [options]')
+  console.error(
+    `Usage: node src/bench/cli.ts <run|grade|report> [options]\n` +
+      `  --bench <round-id>  benchmarks/ 配下のラウンド (default: ${DEFAULT_BENCH_ROUND})`
+  )
   process.exit(2)
 }
 
@@ -24,6 +28,21 @@ const requireOption = (args: string[], name: string): string => {
     return value
   }
   return usage()
+}
+
+const benchOption = (args: string[]): string => {
+  const raw = option(args, '--bench')
+  // option() は「フラグ未指定」と「値欠落」をどちらも null で返すため、
+  // 値欠落を default へ黙って落とさないようフラグの有無で区別する
+  if (raw === null && args.includes('--bench')) {
+    return usage()
+  }
+  const bench = raw ?? DEFAULT_BENCH_ROUND
+  if (!isValidBenchRound(bench)) {
+    console.error(`--bench: invalid round id ${bench} (expected e.g. 202612_delegate_review_bench)`)
+    return usage()
+  }
+  return bench
 }
 
 const main = async (): Promise<void> => {
@@ -59,6 +78,7 @@ const main = async (): Promise<void> => {
     }
     const childSkill = childSkillRaw ?? undefined
     const result = await runBenchmark({
+      bench: benchOption(args),
       childSkill,
       dryRun: args.includes('--dry-run'),
       effort,
@@ -70,7 +90,7 @@ const main = async (): Promise<void> => {
     return
   }
   if (command === 'report') {
-    console.log(buildReportMarkdown())
+    console.log(buildReportMarkdown(loadRuns(benchOption(args))))
     return
   }
   usage()

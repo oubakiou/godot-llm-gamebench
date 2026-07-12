@@ -28,7 +28,7 @@
 
 ### 202607_delegate_implement_bench（2026-07）
 
-結果の正本: [benchmarks/impressions.md](benchmarks/impressions.md)（サマリー表・モデル別所感・計測の経緯・追試・判定者クロスチェック）
+結果の正本: [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md)（サマリー表・モデル別所感・計測の経緯・追試・判定者クロスチェック）
 
 | モデル                         | 自動テストによる評価(合算) | コード品質 (sonnet評, sol評)                                                                                  | 親費用+子費用(中央値)            | 所要時間(中央値) | ひとこと                                                                          |
 | ------------------------------ | -------------------------: | ------------------------------------------------------------------------------------------------------------- | -------------------------------- | ---------------: | --------------------------------------------------------------------------------- |
@@ -57,7 +57,7 @@
 | ----------------------- | -------------------------: | ----------------------------------------- | ---------------------------- | ---------------: | --------------------------------- |
 | fable-direct (委譲なし) |                     300.00 | 4.6 (4.7, 4.5) — 3 ラン安定・型規律最上位 | $2.62 + $0（計 $2.62、実測） |           5.7 分 | ベースライン: 親 Fable の直接実装 |
 
-各指標の定義（採点ルーブリック、費用の算定方法、コード品質の判定体制と代表値の規則）と、追試 1（reasoning effort A/B）・追試 2（gdscript-quality skill A/B）・判定者クロスチェックの結果は [benchmarks/impressions.md](benchmarks/impressions.md) を参照。
+各指標の定義（採点ルーブリック、費用の算定方法、コード品質の判定体制と代表値の規則）と、追試 1（reasoning effort A/B）・追試 2（gdscript-quality skill A/B）・判定者クロスチェックの結果は [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md) を参照。
 
 ## bench コマンド
 
@@ -73,12 +73,14 @@
 .
 ├─ src/bench/                    # orchestrator: run / grade / report CLI（TypeScript, in-source test）
 ├─ benchmarks/
-│  ├─ impressions.md             # 委譲先モデルの定性所感
-│  ├─ tasks/conveyor-courier/
-│  │  ├─ prompt.md               # 子モデルへ渡す課題文の正本（凍結済み）
-│  │  ├─ reference/              # リファレンス実装（Godot プロジェクト。子モデルには渡さない）
-│  │  └─ hidden-tests/           # 隠しテスト（子モデルには渡さない）
-│  └─ runs/                      # ラン成果物（gitignore。集計レポートのみコミット）
+│  ├─ tasks/                     # ラウンド横断で共有する課題正本
+│  │  └─ conveyor-courier/
+│  │     ├─ prompt.md            # 子モデルへ渡す課題文の正本（凍結済み）
+│  │     ├─ reference/           # リファレンス実装（Godot プロジェクト。子モデルには渡さない）
+│  │     └─ hidden-tests/        # 隠しテスト（子モデルには渡さない）
+│  └─ 202607_delegate_implement_bench/
+│     ├─ impressions.md          # 委譲先モデルの定性所感
+│     └─ runs/                   # ラン成果物（gitignore。集計レポートのみコミット）
 ├─ docs/
 │  ├─ design/bench_common_design.md
 │  │                               # 共通基盤（対象モデル、実行アーキテクチャ、計測、公平性）

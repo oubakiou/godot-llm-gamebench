@@ -31,7 +31,7 @@ skills-lock.json
 *-feedback.json
 
 # ラン成果物（session id やローカルパスを含む生データ。集計レポートのみ手動でコミットする）
-benchmarks/runs/
+benchmarks/*/runs/
 
 # Godot エディタキャッシュ（機体ローカルの実行パス等を含む生成物）
 **/.godot/

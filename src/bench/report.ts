@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+import { repoRoot, runsRootOf } from './paths.ts'
 import type { GradeResult, Metrics } from './types.ts'
 
 interface PriceRow {
@@ -21,8 +21,6 @@ interface RunSummary {
   totalCostUsd: number | null
 }
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const runsRoot = join(repoRoot, 'benchmarks/runs')
 const pricesPath = join(repoRoot, '.claude/skills/delegate-implement/model-token-prices.json')
 
 const median = (values: number[]): number | null => {
@@ -110,7 +108,8 @@ const calculateChildCost = (metrics: Metrics, prices: Map<string, PriceRow>): nu
   )
 }
 
-const loadRuns = (): RunSummary[] => {
+export const loadRuns = (bench: string): RunSummary[] => {
+  const runsRoot = runsRootOf(bench)
   if (!existsSync(runsRoot)) {
     return []
   }
@@ -146,7 +145,7 @@ const loadRuns = (): RunSummary[] => {
     })
 }
 
-export const buildReportMarkdown = (runs: RunSummary[] = loadRuns()): string => {
+export const buildReportMarkdown = (runs: RunSummary[]): string => {
   const byModel = new Map<string, RunSummary[]>()
   for (const run of runs) {
     byModel.set(run.model, [...(byModel.get(run.model) ?? []), run])

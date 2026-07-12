@@ -10,16 +10,14 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { basename, join } from 'node:path'
 import { gradeWorkspace } from './grade.ts'
 import { buildMetrics, latestMtimeMs, sumFileSizes } from './metrics.ts'
+import { repoRoot, runsRootOf } from './paths.ts'
 import type { Metrics, Outcome } from './types.ts'
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const promptPath = join(repoRoot, 'benchmarks/tasks/conveyor-courier/prompt.md')
 const delegateSkillPath = join(repoRoot, '.claude/skills/delegate-implement')
-const runsRoot = join(repoRoot, 'benchmarks/runs')
 
 const parentPlaybook = `Read TASK.md and delegate the implementation to the delegate-implement skill.
 Verify only the public acceptance criteria in TASK.md.
@@ -47,6 +45,7 @@ When finished, respond with exactly one word: completed or failed.`
 export const DIRECT_MODEL = 'fable-direct'
 
 interface RunArgs {
+  bench: string
   model: string
   rep: number
   dryRun: boolean
@@ -308,6 +307,7 @@ const runParent = async (args: {
 export const runBenchmark = async (
   args: RunArgs
 ): Promise<{ runDir: string; metrics: Metrics }> => {
+  const runsRoot = runsRootOf(args.bench)
   mkdirSync(runsRoot, { recursive: true })
   const label = modelLabel(args.model, args.variant ?? args.effort)
   const runId = makeRunId(label, args.rep)
@@ -376,16 +376,19 @@ export const runBenchmark = async (
 if (import.meta.vitest) {
   const { describe, expect, it } = import.meta.vitest
 
-  describe('violatesParentProtocol', () => {
-    const makeWorkDir = (observe?: { state?: { phase?: string } }): string => {
-      const dir = join(repoRoot, '.temp', `vitest-observe-${Math.random().toString(36).slice(2)}`)
-      mkdirSync(dir, { recursive: true })
-      if (observe !== undefined) {
-        writeFileSync(join(dir, 'delegate_x_observe.json'), JSON.stringify(observe))
-      }
-      return dir
+  // repoRoot が import になったことで capture 無しと誤検知される。module scope へ
+  // 出すと import.meta.vitest ブロック外に出てテスト専用コードが build 出力へ混入する
+  // eslint-disable-next-line unicorn/consistent-function-scoping
+  const makeWorkDir = (observe?: { state?: { phase?: string } }): string => {
+    const dir = join(repoRoot, '.temp', `vitest-observe-${Math.random().toString(36).slice(2)}`)
+    mkdirSync(dir, { recursive: true })
+    if (observe !== undefined) {
+      writeFileSync(join(dir, 'delegate_x_observe.json'), JSON.stringify(observe))
     }
+    return dir
+  }
 
+  describe('violatesParentProtocol', () => {
     it('rejects a missing or non-protocol final word', () => {
       const dir = makeWorkDir({ state: { phase: 'ended' } })
       expect(violatesParentProtocol({}, dir)).toBe(true)
