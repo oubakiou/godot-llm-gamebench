@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { gradeWorkspace } from './grade.ts'
 import { buildReportMarkdown } from './report.ts'
 import { runBenchmark } from './run.ts'
@@ -39,7 +41,31 @@ const main = async (): Promise<void> => {
     if (!Number.isInteger(rep)) {
       usage()
     }
-    const result = await runBenchmark({ dryRun: args.includes('--dry-run'), model, rep })
+    // Codex CLI は effort 値をローカル検証せずサーバへ素通しするため、typo を実ラン前に落とす
+    const effortRaw = option(args, '--effort')
+    if (effortRaw !== null && !['minimal', 'low', 'medium', 'high', 'xhigh'].includes(effortRaw)) {
+      usage()
+    }
+    const effort = effortRaw ?? undefined
+    const variantRaw = option(args, '--variant')
+    if (variantRaw !== null && !/^[a-z0-9][a-z0-9-]*$/.test(variantRaw)) {
+      usage()
+    }
+    const variant = variantRaw ?? undefined
+    const childSkillRaw = option(args, '--child-skill')
+    if (childSkillRaw !== null && !existsSync(join(childSkillRaw, 'SKILL.md'))) {
+      console.error(`--child-skill: SKILL.md not found under ${childSkillRaw}`)
+      usage()
+    }
+    const childSkill = childSkillRaw ?? undefined
+    const result = await runBenchmark({
+      childSkill,
+      dryRun: args.includes('--dry-run'),
+      effort,
+      model,
+      rep,
+      variant,
+    })
     console.log(result.runDir)
     return
   }

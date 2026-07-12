@@ -10,7 +10,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gradeWorkspace } from './grade.ts'
 import { buildMetrics, latestMtimeMs, sumFileSizes } from './metrics.ts'
@@ -50,7 +50,15 @@ interface RunArgs {
   model: string
   rep: number
   dryRun: boolean
+  effort?: string
+  variant?: string
+  childSkill?: string
 }
+
+// effort / variant はレポート集計キー（metrics.model / run_id）にだけ載せ、
+// CLI へ渡す実モデル ID とは分離する
+export const modelLabel = (model: string, suffix?: string): string =>
+  suffix === undefined ? model : `${model}@${suffix}`
 
 const safeSegment = (value: string): string => value.replace(/[^a-zA-Z0-9._-]/g, '_')
 
@@ -67,7 +75,7 @@ const writeJson = (path: string, value: unknown): void => {
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`)
 }
 
-const initWorkspace = (runDir: string, direct: boolean): string => {
+const initWorkspace = (runDir: string, direct: boolean, childSkill?: string): string => {
   const workspace = join(runDir, 'workspace')
   mkdirSync(workspace, { recursive: true })
   copyFileSync(promptPath, join(workspace, 'TASK.md'))
@@ -81,6 +89,16 @@ const initWorkspace = (runDir: string, direct: boolean): string => {
     writeFileSync(
       join(workspace, 'CLAUDE.md'),
       '実装タスクは delegate-implement skill で委譲する。\n'
+    )
+  }
+  if (childSkill !== undefined) {
+    const skillName = basename(childSkill)
+    mkdirSync(join(workspace, '.claude/skills'), { recursive: true })
+    cpSync(childSkill, join(workspace, '.claude/skills', skillName), { recursive: true })
+    writeFileSync(
+      join(workspace, 'CLAUDE.md'),
+      `GDScript の実装・修正を行う実装者は、開始前に .claude/skills/${skillName}/SKILL.md を読み、その規約に従い、同梱の検証スクリプトで headless 検証すること。\n`,
+      { flag: 'a' }
     )
   }
   spawnSync('git', ['init'], { cwd: workspace, stdio: 'ignore' })
@@ -184,10 +202,26 @@ const startWatchdog = (args: {
   }, 30_000)
 }
 
+const delegateEnvFor = (args: {
+  model: string
+  effort?: string
+  metricsFile: string
+  workDir: string
+}): Record<string, string> =>
+  args.model === DIRECT_MODEL
+    ? {}
+    : {
+        DELEGATE_IMPLEMENT_MODEL: args.model,
+        DELEGATE_METRICS_FILE: args.metricsFile,
+        DELEGATE_WORK_DIR: args.workDir,
+        ...(args.effort === undefined ? {} : { CODEX_DELEGATE_REASONING_EFFORT: args.effort }),
+      }
+
 const runParent = async (args: {
   workspace: string
   runDir: string
   model: string
+  effort?: string
 }): Promise<{
   outcome: Outcome
   stdout: string
@@ -200,13 +234,12 @@ const runParent = async (args: {
     const workDir = join(delegateDir, 'work')
     mkdirSync(workDir, { recursive: true })
     const direct = args.model === DIRECT_MODEL
-    const delegateEnv = direct
-      ? {}
-      : {
-          DELEGATE_IMPLEMENT_MODEL: args.model,
-          DELEGATE_METRICS_FILE: metricsFile,
-          DELEGATE_WORK_DIR: workDir,
-        }
+    const delegateEnv = delegateEnvFor({
+      effort: args.effort,
+      metricsFile,
+      model: args.model,
+      workDir,
+    })
     const child = spawn(
       'claude',
       [
@@ -276,12 +309,13 @@ export const runBenchmark = async (
   args: RunArgs
 ): Promise<{ runDir: string; metrics: Metrics }> => {
   mkdirSync(runsRoot, { recursive: true })
-  const runId = makeRunId(args.model, args.rep)
+  const label = modelLabel(args.model, args.variant ?? args.effort)
+  const runId = makeRunId(label, args.rep)
   const runDir = join(runsRoot, runId)
   rmSync(runDir, { force: true, recursive: true })
   mkdirSync(join(runDir, 'delegate/work'), { recursive: true })
   const direct = args.model === DIRECT_MODEL
-  const workspace = initWorkspace(runDir, direct)
+  const workspace = initWorkspace(runDir, direct, args.childSkill)
   const metricsFile = join(runDir, 'delegate/metrics.jsonl')
   const delegateWorkDir = join(runDir, 'delegate/work')
   const parentCommand = [
@@ -301,17 +335,16 @@ export const runBenchmark = async (
     writeJson(join(runDir, 'dry-run-command.json'), {
       command: parentCommand,
       cwd: workspace,
-      env: direct
-        ? {}
-        : {
-            DELEGATE_IMPLEMENT_MODEL: args.model,
-            DELEGATE_METRICS_FILE: metricsFile,
-            DELEGATE_WORK_DIR: delegateWorkDir,
-          },
+      env: delegateEnvFor({
+        effort: args.effort,
+        metricsFile,
+        model: args.model,
+        workDir: delegateWorkDir,
+      }),
     })
     writeFileSync(metricsFile, '')
   } else {
-    const parent = await runParent({ model: args.model, runDir, workspace })
+    const parent = await runParent({ effort: args.effort, model: args.model, runDir, workspace })
     const parsedParentResult = readParentResult(parent.stdout)
     parentResult = parsedParentResult
     outcome = parent.outcome
@@ -324,7 +357,7 @@ export const runBenchmark = async (
   const metrics = buildMetrics({
     delegateMetricsJsonl: metricsFile,
     delegateWorkDir,
-    model: args.model,
+    model: label,
     outcome,
     parentResult,
     runId,

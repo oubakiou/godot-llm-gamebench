@@ -13,8 +13,9 @@ import type { ChildTokens, Metrics, ParentTokens } from './types.ts'
 type JsonRecord = Record<string, unknown>
 
 export const backendForModel = (model: string): string => {
-  // fable-direct は委譲なしベースライン（親自身が実装）。子プロセスを持たない
-  if (model === 'fable-direct') {
+  // fable-direct は委譲なしベースライン（親自身が実装）。子プロセスを持たない。
+  // @<effort|variant> は集計キー用サフィックスのため剥がしてから判定する
+  if (model.replace(/@[^@]*$/, '') === 'fable-direct') {
     return 'direct'
   }
   if (model.startsWith('gpt')) {
@@ -259,10 +260,12 @@ if (import.meta.vitest) {
 
     it('detects backends from model prefixes', () => {
       expect(backendForModel('gpt-5.5')).toBe('codex')
+      expect(backendForModel('gpt-5.6-luna@xhigh')).toBe('codex')
       expect(backendForModel('devin-glm-5.2')).toBe('devin')
       expect(backendForModel('composer-2.5')).toBe('cursor')
       expect(backendForModel('sonnet-5')).toBe('claude')
       expect(backendForModel('fable-direct')).toBe('direct')
+      expect(backendForModel('fable-direct@noskill')).toBe('direct')
     })
 
     it('reports zero measured child tokens for the direct baseline', () => {

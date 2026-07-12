@@ -84,10 +84,12 @@ const loadPrices = (): Map<string, PriceRow> => {
   return prices
 }
 
-// devin-* / cursor-* の prefix は実行系 CLI の振り分け用で、
-// 価格表のキーは素のモデル名のため剥離してから引き直す
-export const lookupPrice = (model: string, prices: Map<string, PriceRow>): PriceRow | undefined =>
-  prices.get(model) ?? prices.get(model.replace(/^(?:devin|cursor)-/, ''))
+// devin-* / cursor-* prefix は実行系 CLI の振り分け用、@<effort> suffix は
+// reasoning effort 条件の集計キー分離用で、価格表のキーは素のモデル名のため剥離してから引き直す
+export const lookupPrice = (model: string, prices: Map<string, PriceRow>): PriceRow | undefined => {
+  const base = model.replace(/@[^@]*$/, '')
+  return prices.get(model) ?? prices.get(base) ?? prices.get(base.replace(/^(?:devin|cursor)-/, ''))
+}
 
 const calculateChildCost = (metrics: Metrics, prices: Map<string, PriceRow>): number | null => {
   if (metrics.child_tokens.cost_usd !== null) {
@@ -205,6 +207,11 @@ if (import.meta.vitest) {
       expect(lookupPrice('composer-2.5-fast', prices)?.input).toBe(3)
       expect(lookupPrice('devin-glm-5.2', prices)?.input).toBe(1.4)
       expect(lookupPrice('cursor-glm-5.2', prices)?.input).toBe(1.4)
+    })
+
+    it('strips effort suffixes before lookup', () => {
+      expect(lookupPrice('glm-5.2@xhigh', prices)?.input).toBe(1.4)
+      expect(lookupPrice('devin-glm-5.2@medium', prices)?.input).toBe(1.4)
     })
 
     it('returns undefined for unknown models', () => {
