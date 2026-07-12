@@ -5,10 +5,11 @@ import { gradeWorkspace } from './grade.ts'
 import { DEFAULT_BENCH_ROUND, isValidBenchRound } from './paths.ts'
 import { buildReportMarkdown, loadRuns } from './report.ts'
 import { runBenchmark } from './run.ts'
+import { exportBenchGallery } from './export.ts'
 
 const usage = (): never => {
   console.error(
-    `Usage: node src/bench/cli.ts <run|grade|report> [options]\n` +
+    `Usage: node src/bench/cli.ts <run|grade|report|export> [options]\n` +
       `  --bench <round-id>  benchmarks/ 配下のラウンド (default: ${DEFAULT_BENCH_ROUND})`
   )
   process.exit(2)
@@ -91,6 +92,16 @@ const main = async (): Promise<void> => {
   }
   if (command === 'report') {
     console.log(buildReportMarkdown(loadRuns(benchOption(args))))
+    return
+  }
+  if (command === 'export') {
+    const modelsRaw = option(args, '--models')
+    const out = option(args, '--out')
+    await exportBenchGallery({
+      bench: benchOption(args),
+      models: modelsRaw === null ? null : modelsRaw.split(','),
+      out,
+    })
     return
   }
   usage()

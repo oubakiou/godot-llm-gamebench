@@ -10,7 +10,7 @@ interface PriceRow {
   output?: number | null
 }
 
-interface RunSummary {
+export interface RunSummary {
   runId: string
   model: string
   outcome: Metrics['outcome']

@@ -13,7 +13,7 @@ import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import type { GradeJson, GradeResult, GradeScore } from './types.ts'
 
-interface CommandResult {
+export interface CommandResult {
   command: string
   args: string[]
   exitCode: number | null
@@ -85,7 +85,7 @@ export const boundedCapture = (
   }
 }
 
-const runCommand = async (
+export const runCommand = async (
   command: string,
   args: string[],
   options: { cwd?: string; timeoutMs?: number } = {}
