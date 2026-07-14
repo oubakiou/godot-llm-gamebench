@@ -577,6 +577,18 @@ const entryStatusHtml = (entry: GalleryEntry | undefined): string => {
   return ` <small>(${entry.status === 'failed' ? 'export failed' : 'skipped'})</small>`
 }
 
+// nowrap の数値セルに長い ※ 注釈が入ると列が横に広がりすぎるため、
+// 数値は nowrap のまま、注釈は改行して折り返し可能な小文字行に分ける
+const scoreCellHtml = (score: string): string => {
+  const markIndex = score.indexOf('※')
+  if (markIndex === -1) {
+    return `<td class="num">${escapeHtml(score)}</td>`
+  }
+  const value = score.slice(0, markIndex).trim()
+  const note = score.slice(markIndex).trim()
+  return `<td class="score">${escapeHtml(value)}<br><small>${escapeHtml(note)}</small></td>`
+}
+
 const summaryTableHtml = (
   rows: ImpressionsSummaryRow[],
   entriesBySlug: Map<string, GalleryEntry>,
@@ -589,7 +601,7 @@ const summaryTableHtml = (
         entry?.status === 'exported' && entry.link !== null
           ? `<a href="${escapeHtml(entry.link)}"${entry.runId === null ? '' : ` title="代表 run: ${escapeHtml(entry.runId)}"`}>${escapeHtml(row.label)}</a>`
           : escapeHtml(row.label)
-      return `<tr><td>${name}${entryStatusHtml(entry)}</td><td class="num">${escapeHtml(row.score)}</td><td>${inlineCodeHtml(row.quality)}</td><td>${escapeHtml(row.cost)}</td><td class="num">${escapeHtml(row.time)}</td><td>${inlineCodeHtml(row.note)}</td></tr>`
+      return `<tr><td>${name}${entryStatusHtml(entry)}</td>${scoreCellHtml(row.score)}<td>${inlineCodeHtml(row.quality)}</td><td>${escapeHtml(row.cost)}</td><td class="num">${escapeHtml(row.time)}</td><td>${inlineCodeHtml(row.note)}</td></tr>`
     })
     .join('\n')
   return `<table>
@@ -629,6 +641,7 @@ table{border-collapse:collapse;width:100%;background:white}
 th,td{border:1px solid #d8dde3;padding:.55rem .7rem;text-align:left;vertical-align:top}
 th{background:#e9edf2}
 td.num{text-align:right;white-space:nowrap}
+td.score{text-align:right}
 a{color:#0b63ce}
 small{color:#6b7280}
 code{background:#eef1f4;padding:0 .25em;border-radius:3px}
