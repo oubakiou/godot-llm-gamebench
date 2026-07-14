@@ -916,12 +916,12 @@ const summaryTableHtml = (
       return `<tr><td>${name}${entryStatusHtml(entry, ui)}</td>${scoreCellHtml(row.score)}<td>${inlineCodeHtml(row.quality)}</td><td>${escapeHtml(row.cost)}</td><td class="num">${escapeHtml(row.time)}</td><td>${inlineCodeHtml(row.note)}</td></tr>`
     })
     .join('\n')
-  return `<table>
+  return `<div class="tablewrap"><table>
 <thead><tr><th>${escapeHtml(headLabel)}</th><th>${ui.scoreHeader}</th><th>${ui.qualityHeader}</th><th>${ui.costHeader}</th><th>${ui.timeHeader}</th><th>${ui.noteHeader}</th></tr></thead>
 <tbody>
 ${body}
 </tbody>
-</table>`
+</table></div>`
 }
 
 const legacyTableHtml = (entries: GalleryEntry[], lang: 'ja' | 'en'): string => {
@@ -934,12 +934,12 @@ const legacyTableHtml = (entries: GalleryEntry[], lang: 'ja' | 'en'): string => 
       return `<tr><td>${game}</td><td>${escapeHtml(entry.model)}</td><td>${escapeHtml(entry.runId ?? '-')}</td><td>${entry.score === null ? '-' : entry.score.toFixed(2)}</td><td>${entry.reps === null ? '-' : String(entry.reps)}</td><td>${entry.status}</td><td>${escapeHtml(entry.detail)}</td></tr>`
     })
     .join('\n')
-  return `<table>
+  return `<div class="tablewrap"><table>
 <thead><tr><th>Game</th><th>Model</th><th>Representative run</th><th>Score</th><th>Rep count</th><th>Status</th><th>Detail</th></tr></thead>
 <tbody>
 ${rows}
 </tbody>
-</table>`
+</table></div>`
 }
 
 const pageHtml = (title: string, bodyHtml: string, lang: 'ja' | 'en'): string => {
@@ -952,6 +952,7 @@ const pageHtml = (title: string, bodyHtml: string, lang: 'ja' | 'en'): string =>
 <title>${escapeHtml(title)}</title>
 <style>
 body{font-family:system-ui,sans-serif;margin:2rem;color:#1f2933;background:#f7f8fa}
+.tablewrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;background:white}
 th,td{border:1px solid #d8dde3;padding:.55rem .7rem;text-align:left;vertical-align:top}
 th{background:#e9edf2}
@@ -960,6 +961,7 @@ td.score{text-align:right}
 a{color:#0b63ce}
 small{color:#6b7280}
 code{background:#eef1f4;padding:0 .25em;border-radius:3px}
+@media (max-width: 700px){body{margin:1rem}}
 </style>
 </head>
 <body>
@@ -1391,6 +1393,8 @@ if (import.meta.vitest) {
       expect(html).toContain('<code>_items</code>')
       expect(html).toContain('swe-1.7 (Devin) <small>(未エクスポート)</small>')
       expect(html).not.toContain('その他のエントリ')
+      expect(html).toContain('<div class="tablewrap"><table>')
+      expect(html).toContain('.tablewrap{overflow-x:auto}')
     })
 
     it('falls back to the legacy table without a summary', () => {
