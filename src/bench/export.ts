@@ -75,6 +75,7 @@ interface UiText {
   gameTitle: string
   backToList: string
   switchLangLabel: string
+  repoLinkLabel: string
   modelHeader: string
   conditionHeader: string
   scoreHeader: string
@@ -128,6 +129,7 @@ interface UiText {
   scoreAxes: [string, string, number][]
 }
 
+const REPO_URL = 'https://github.com/oubakiou/godot-llm-gamebench'
 const DEFAULT_EXPORT_ROOT = join(repoRoot, '.temp/bench-export')
 const REFERENCE_SOURCE = join(repoRoot, 'benchmarks/tasks/conveyor-courier/reference')
 const SHARED_FILES = [
@@ -302,6 +304,7 @@ const UI_JA: UiText = {
   gameTitle: 'Conveyor Courier — __MODEL__',
   backToList: '← 一覧へ戻る',
   switchLangLabel: 'English',
+  repoLinkLabel: 'GitHub リポジトリ',
   modelHeader: 'モデル',
   conditionHeader: '条件',
   scoreHeader: '自動テストによる評価(合算)',
@@ -372,6 +375,7 @@ const UI_EN: UiText = {
   gameTitle: 'Conveyor Courier — __MODEL__',
   backToList: '← Back to list',
   switchLangLabel: '日本語',
+  repoLinkLabel: 'GitHub repository',
   modelHeader: 'Model',
   conditionHeader: 'Condition',
   scoreHeader: 'Auto-graded score (sum)',
@@ -972,7 +976,7 @@ export const buildGalleryHtml = (
 ): string => {
   const ui = UI[lang]
   const langSwitchLink = lang === 'ja' ? 'en/' : '../'
-  const langSwitchHtml = `<p class="lang-switch"><a href="${escapeHtml(langSwitchLink)}">${ui.switchLangLabel}</a></p>`
+  const langSwitchHtml = `<p class="lang-switch"><a href="${REPO_URL}">${ui.repoLinkLabel}</a> | <a href="${escapeHtml(langSwitchLink)}">${ui.switchLangLabel}</a></p>`
   if (summary === null) {
     const title = ui.galleryTitle.replace('__BENCH__', bench)
     return pageHtml(
