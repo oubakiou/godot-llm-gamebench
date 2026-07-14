@@ -32,6 +32,8 @@ The benchmark task is **Conveyor Courier**, a custom tick-driven puzzle where pa
 
 Canonical results: [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md) (Japanese — summary table, per-model notes, measurement history, follow-up A/Bs, and the judge cross-check).
 
+Browser-playable gallery: <https://oubakiou.github.io/godot-llm-gamebench/> — play each model's representative run (the median-score rep) directly in the browser, with per-run grading breakdowns.
+
 | Model                          |                              Auto-graded score (sum) | Code quality (sonnet, sol)                                                                                                             | Parent + child cost (median)           | Wall clock (median) | Note                                                                                                          |
 | ------------------------------ | ---------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ------------------: | ------------------------------------------------------------------------------------------------------------- |
 | claude-sonnet-5 (Claude)       |                                               290.00 | 3.8 (4.3, 3.3) — only rep1 reaches 5, internal type abandonment in 2/3; large judge divergence, representative = operator adjudication | $0.97 + $1.30 (total $2.27, measured)  |             8.6 min | Quality leader, incident-free. Two zero-warning runs                                                          |
