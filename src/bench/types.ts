@@ -50,6 +50,7 @@ export interface GradeResult {
     failed: number
     categories: Record<string, { passed: number; failed: number }>
     failed_tests: { category: string; name: string; detail: string }[]
+    tests: { category: string; name: string; passed: boolean; detail: string }[]
   }
   type_warnings: number
   score: GradeScore

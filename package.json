@@ -15,6 +15,7 @@
   },
   "scripts": {
     "bench:grade": "node src/bench/cli.ts grade",
+    "bench:regrade": "node src/bench/cli.ts regrade",
     "bench:export": "node src/bench/cli.ts export",
     "bench:report": "node src/bench/cli.ts report",
     "bench:run": "node src/bench/cli.ts run",

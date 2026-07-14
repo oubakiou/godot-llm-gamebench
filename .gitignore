@@ -35,3 +35,5 @@ benchmarks/*/runs/
 
 # Godot エディタキャッシュ（機体ローカルの実行パス等を含む生成物）
 **/.godot/
+
+docs/handover.md

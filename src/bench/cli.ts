@@ -4,12 +4,13 @@ import { join } from 'node:path'
 import { gradeWorkspace } from './grade.ts'
 import { DEFAULT_BENCH_ROUND, isValidBenchRound } from './paths.ts'
 import { buildReportMarkdown, loadRuns } from './report.ts'
+import { regradeBench } from './regrade.ts'
 import { runBenchmark } from './run.ts'
 import { exportBenchGallery } from './export.ts'
 
 const usage = (): never => {
   console.error(
-    `Usage: node src/bench/cli.ts <run|grade|report|export> [options]\n` +
+    `Usage: node src/bench/cli.ts <run|grade|regrade|report|export> [options]\n` +
       `  --bench <round-id>  benchmarks/ 配下のラウンド (default: ${DEFAULT_BENCH_ROUND})`
   )
   process.exit(2)
@@ -88,6 +89,15 @@ const main = async (): Promise<void> => {
       variant,
     })
     console.log(result.runDir)
+    return
+  }
+  if (command === 'regrade') {
+    const concurrencyRaw = option(args, '--concurrency')
+    const concurrency = concurrencyRaw === null ? 3 : Number.parseInt(concurrencyRaw, 10)
+    if (!Number.isInteger(concurrency) || concurrency < 1) {
+      usage()
+    }
+    await regradeBench(benchOption(args), concurrency)
     return
   }
   if (command === 'report') {

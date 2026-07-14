@@ -23,7 +23,20 @@ export interface CommandResult {
 }
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const hiddenTestPath = join(repoRoot, 'benchmarks/tasks/conveyor-courier/hidden-tests/run_tests.gd')
+export const hiddenTestPath = join(
+  repoRoot,
+  'benchmarks/tasks/conveyor-courier/hidden-tests/run_tests.gd'
+)
+export const viewTestPath = join(
+  repoRoot,
+  'benchmarks/tasks/conveyor-courier/hidden-tests/run_view_tests.gd'
+)
+
+export const VIEW_TEST_NAMES: string[] = [
+  'tick advances at 0.5s interval',
+  'mouse click places a belt',
+  'labels have no missing glyphs',
+]
 const round = (value: number): number => Math.round(value * 100) / 100
 
 // 停滞ランの残存実装が毎フレーム print する等で出力が数百 MB に達することがあり、
@@ -129,7 +142,14 @@ const emptyCategories = (): Record<string, { passed: number; failed: number }> =
 
 export const normalizeGradeJson = (grade: GradeJson | null): GradeResult['hidden_tests'] => {
   if (grade === null) {
-    return { parsed: false, passed: 0, failed: 0, categories: emptyCategories(), failed_tests: [] }
+    return {
+      categories: emptyCategories(),
+      failed: 0,
+      failed_tests: [],
+      parsed: false,
+      passed: 0,
+      tests: [],
+    }
   }
   const categories = Object.fromEntries(
     Object.entries(grade.categories ?? {}).map(([name, value]) => [
@@ -137,19 +157,54 @@ export const normalizeGradeJson = (grade: GradeJson | null): GradeResult['hidden
       { failed: value.failed ?? 0, passed: value.passed ?? 0 },
     ])
   )
-  const failedTests = (grade.tests ?? [])
-    .filter((test) => test.passed === false)
-    .map((test) => ({
-      category: test.category ?? '?',
-      detail: test.detail ?? '',
-      name: test.name ?? '?',
-    }))
+  const tests = (grade.tests ?? []).map((test) => ({
+    category: test.category ?? '?',
+    detail: test.detail ?? '',
+    name: test.name ?? '?',
+    passed: test.passed === true,
+  }))
   return {
     categories,
     failed: grade.failed ?? 0,
-    failed_tests: failedTests,
+    failed_tests: tests
+      .filter((test) => !test.passed)
+      .map(({ category, detail, name }) => ({ category, detail, name })),
     parsed: true,
     passed: grade.passed ?? 0,
+    tests,
+  }
+}
+
+// View テスト実行が結果を出せない場合（子実装の headless 検知による自己終了・
+// クラッシュ・タイムアウト）も分母 3 件を失敗として計上し、採点の分母を一定に保つ
+export const mergeViewResults = (
+  hidden: GradeResult['hidden_tests'],
+  view: GradeJson | null
+): GradeResult['hidden_tests'] => {
+  if (!hidden.parsed) {
+    return hidden
+  }
+  const normalizedView =
+    view === null || (view.tests ?? []).length === 0
+      ? normalizeGradeJson({
+          categories: { view: { failed: VIEW_TEST_NAMES.length, passed: 0 } },
+          failed: VIEW_TEST_NAMES.length,
+          passed: 0,
+          tests: VIEW_TEST_NAMES.map((name) => ({
+            category: 'view',
+            detail: 'view test run produced no result (process exited early or crashed)',
+            name,
+            passed: false,
+          })),
+        })
+      : normalizeGradeJson(view)
+  return {
+    categories: { ...hidden.categories, ...normalizedView.categories },
+    failed: hidden.failed + normalizedView.failed,
+    failed_tests: [...hidden.failed_tests, ...normalizedView.failed_tests],
+    parsed: true,
+    passed: hidden.passed + normalizedView.passed,
+    tests: [...hidden.tests, ...normalizedView.tests],
   }
 }
 
@@ -160,15 +215,15 @@ export const calculateScore = (args: {
   typeWarnings: number
 }): GradeScore => {
   const totalHidden = args.hidden.passed + args.hidden.failed
-  const functionality = totalHidden === 0 ? 0 : (args.hidden.passed / totalHidden) * 60
+  const functionality = totalHidden === 0 ? 0 : (args.hidden.passed / totalHidden) * 70
   const determinismCategory = args.hidden.categories.determinism
   const determinismTotal = (determinismCategory?.passed ?? 0) + (determinismCategory?.failed ?? 0)
   const determinism = determinismTotal > 0 && (determinismCategory?.failed ?? 0) === 0 ? 10 : 0
   const contractCategory = args.hidden.categories.contract
   const contractOk =
     contractCategory !== undefined && contractCategory.failed === 0 && contractCategory.passed > 0
-  const health = (args.importOk ? 5 : 0) + (args.smokeOk ? 5 : 0) + (contractOk ? 5 : 0)
-  const typeQuality = Math.max(0, 15 - args.typeWarnings * 3)
+  const health = (args.importOk ? 3 : 0) + (args.smokeOk ? 3 : 0) + (contractOk ? 4 : 0)
+  const typeQuality = Math.max(0, 10 - args.typeWarnings * 2)
   return {
     determinism,
     functionality: round(functionality),
@@ -178,7 +233,7 @@ export const calculateScore = (args: {
   }
 }
 
-const parseGradeLine = (stdout: string): GradeJson | null => {
+export const parseGradeLine = (stdout: string): GradeJson | null => {
   const line = stdout
     .split(/\r?\n/)
     .find((candidate) => candidate.startsWith('GRADE_JSON: '))
@@ -258,30 +313,55 @@ export const gradeWorkspace = async (workspaceInput: string): Promise<GradeResul
     timed_out: smokeResult.timedOut,
   })
 
-  const injectedTest = join(workspace, 'run_tests.gd')
-  let hiddenResult: CommandResult = {
-    args: [],
-    command: 'godot',
-    exitCode: null,
-    stderr: '',
-    stdout: '',
-    timedOut: false,
+  const runInjectedScript = async (args: {
+    scriptSource: string
+    scriptName: string
+    commandName: string
+    timeoutMs: number
+  }): Promise<CommandResult> => {
+    const { commandName, scriptName, scriptSource, timeoutMs } = args
+    const injected = join(workspace, scriptName)
+    let result: CommandResult = {
+      args: [],
+      command: 'godot',
+      exitCode: null,
+      stderr: '',
+      stdout: '',
+      timedOut: false,
+    }
+    try {
+      copyFileSync(scriptSource, injected)
+      result = await runCommand(
+        'godot',
+        ['--headless', '--path', workspace, '-s', `res://${scriptName}`],
+        { timeoutMs }
+      )
+    } finally {
+      rmSync(injected, { force: true })
+      rmSync(`${injected}.uid`, { force: true })
+    }
+    commands.push({
+      command: `godot --headless --path ${workspace} -s res://${scriptName}`,
+      exit_code: result.exitCode,
+      name: commandName,
+      timed_out: result.timedOut,
+    })
+    return result
   }
-  try {
-    copyFileSync(hiddenTestPath, injectedTest)
-    hiddenResult = await runCommand(
-      'godot',
-      ['--headless', '--path', workspace, '-s', 'res://run_tests.gd'],
-      { timeoutMs: 60_000 }
-    )
-  } finally {
-    rmSync(injectedTest, { force: true })
-  }
-  commands.push({
-    command: `godot --headless --path ${workspace} -s res://run_tests.gd`,
-    exit_code: hiddenResult.exitCode,
-    name: 'hidden-tests',
-    timed_out: hiddenResult.timedOut,
+
+  const hiddenResult = await runInjectedScript({
+    commandName: 'hidden-tests',
+    scriptName: 'run_tests.gd',
+    scriptSource: hiddenTestPath,
+    timeoutMs: 60_000,
+  })
+  // View テストは実シーンを起動して実時間で待つため、ハング時に model テストの
+  // 結果まで失わないよう別プロセス・別タイムアウトで実行する
+  const viewResult = await runInjectedScript({
+    commandName: 'view-tests',
+    scriptName: 'run_view_tests.gd',
+    scriptSource: viewTestPath,
+    timeoutMs: 45_000,
   })
 
   let typeWarnings = 0
@@ -337,7 +417,10 @@ export const gradeWorkspace = async (workspaceInput: string): Promise<GradeResul
     }
   }
 
-  const hidden = normalizeGradeJson(parseGradeLine(hiddenResult.stdout))
+  const hidden = mergeViewResults(
+    normalizeGradeJson(parseGradeLine(hiddenResult.stdout)),
+    parseGradeLine(viewResult.stdout)
+  )
   const score = calculateScore({
     hidden,
     importOk: importResult.exitCode === 0 && !importResult.timedOut,
@@ -410,10 +493,10 @@ if (import.meta.vitest) {
       })
       expect(calculateScore({ hidden, importOk: true, smokeOk: true, typeWarnings: 2 })).toEqual({
         determinism: 10,
-        functionality: 54.55,
-        health: 15,
-        total: 88.55,
-        type_quality: 9,
+        functionality: 63.64,
+        health: 10,
+        total: 89.64,
+        type_quality: 6,
       })
     })
 
@@ -428,7 +511,57 @@ if (import.meta.vitest) {
       ).toBe(0)
       expect(
         calculateScore({ hidden, importOk: false, smokeOk: true, typeWarnings: 99 }).health
-      ).toBe(5)
+      ).toBe(3)
+    })
+  })
+
+  describe('mergeViewResults', () => {
+    const model = normalizeGradeJson({
+      categories: { api: { failed: 0, passed: 2 } },
+      failed: 0,
+      passed: 2,
+      tests: [
+        { category: 'api', name: 'a', passed: true },
+        { category: 'api', name: 'b', passed: true },
+      ],
+    })
+
+    it('appends parsed view results to model results', () => {
+      const merged = mergeViewResults(model, {
+        categories: { view: { failed: 1, passed: 2 } },
+        failed: 1,
+        passed: 2,
+        tests: [
+          { category: 'view', name: VIEW_TEST_NAMES[0] ?? '', passed: true },
+          { category: 'view', name: VIEW_TEST_NAMES[1] ?? '', passed: false, detail: 'placed=0' },
+          { category: 'view', name: VIEW_TEST_NAMES[2] ?? '', passed: true },
+        ],
+      })
+      expect(merged.passed).toBe(4)
+      expect(merged.failed).toBe(1)
+      expect(merged.categories.view).toEqual({ failed: 1, passed: 2 })
+      expect(merged.tests).toHaveLength(5)
+      expect(merged.failed_tests).toEqual([
+        { category: 'view', detail: 'placed=0', name: VIEW_TEST_NAMES[1] },
+      ])
+    })
+
+    it('counts all view tests as failed when the view run produced no result', () => {
+      const merged = mergeViewResults(model, null)
+      expect(merged.passed).toBe(2)
+      expect(merged.failed).toBe(3)
+      expect(merged.categories.view).toEqual({ failed: 3, passed: 0 })
+      expect(merged.failed_tests.map((test) => test.name)).toEqual(VIEW_TEST_NAMES)
+    })
+
+    it('keeps unparsed model results untouched', () => {
+      const merged = mergeViewResults(normalizeGradeJson(null), {
+        failed: 0,
+        passed: 3,
+        tests: [],
+      })
+      expect(merged.parsed).toBe(false)
+      expect(merged.passed).toBe(0)
     })
   })
 }
