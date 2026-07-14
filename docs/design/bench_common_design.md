@@ -1,6 +1,6 @@
 # 設計 — delegate ベンチ共通基盤
 
-本書は 2 つの委譲ベンチ（implement / review）の共通基盤をまとめる。各ベンチ固有の課題仕様、採点ルーブリック、マイルストーンは [delegate_implement_bench_design.md](./delegate_implement_bench_design.md)、[delegate_review_bench_design.md](./delegate_review_bench_design.md) を参照。
+本書は委譲ベンチの共通基盤をまとめる。各ベンチ固有の課題仕様、採点ルーブリック、マイルストーンは [delegate_implement_bench_design.md](./delegate_implement_bench_design.md) など `delegate_*_bench_design.md` を参照。
 
 ## 1. ベンチ構成
 

@@ -11,10 +11,6 @@
 
 親エージェント（Claude Code）が `delegate-implement` skill を使い、Godot 4.x + Typed GDScript による実装課題を子モデル（Codex / Devin / Cursor / Claude）へ委譲する。1 ラン = 1 モデル × 1 反復とし、各ランを headless な採点器で隠しテストに対して採点し、所要時間・往復回数・トークンコストを併せて記録する。単体のモデル性能を序列化するのではなく、固定仕様下での「モデル + 実行系 CLI ハーネス」の組み合わせを比較することが目的である。
 
-## 課題: Conveyor Courier
-
-課題は tick 駆動のパズル「Conveyor Courier」である。グリッド上を流れる荷物を、ベルトの設置・回転で正しい色の出口へ運ぶ。テトリスのような有名ゲームではなく独自仕様にすることで学習汚染を軽減し、「仕様を読んで抽象化・実装する力」そのものを測る狙いがある。子モデルへ渡す課題文の正本は `benchmarks/tasks/conveyor-courier/prompt.md` であり、全モデル・全反復で byte 一致のまま渡す。隠しテストとリファレンス実装は子モデルの作業場所には置かれず、本書でも内容には触れない。
-
 ## 計測の 2 軸
 
 採点は 2 つの独立した軸で行い、両者を 1 つのスコアに合成しない。
@@ -27,6 +23,10 @@
 ## 過去に行ったベンチ
 
 ### 202607_delegate_implement_bench（2026-07）
+
+#### 課題: Conveyor Courier
+
+課題は tick 駆動のパズル「Conveyor Courier」である。グリッド上を流れる荷物を、ベルトの設置・回転で正しい色の出口へ運ぶ。テトリスのような有名ゲームではなく独自仕様にすることで学習汚染を軽減し、「仕様を読んで抽象化・実装する力」そのものを測る狙いがある。子モデルへ渡す課題文の正本は `benchmarks/tasks/conveyor-courier/prompt.md` であり、全モデル・全反復で byte 一致のまま渡す。隠しテストとリファレンス実装は子モデルの作業場所には置かれず、本書でも内容には触れない。
 
 結果の正本: [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md)（サマリー表・モデル別所感・計測の経緯・追試・判定者クロスチェック）
 
@@ -69,41 +69,7 @@
 | `npm run bench:report`  | ラン結果を集計して Markdown レポートを生成する                            |
 | `npm run bench:export`  | 各モデルのゲームを Web エクスポートしブラウザで遊べるギャラリーを生成する |
 
-## ディレクトリ構成
-
-```text
-.
-├─ src/bench/                    # orchestrator: run / grade / report CLI（TypeScript, in-source test）
-├─ benchmarks/
-│  ├─ tasks/                     # ラウンド横断で共有する課題正本
-│  │  └─ conveyor-courier/
-│  │     ├─ prompt.md            # 子モデルへ渡す課題文の正本（凍結済み）
-│  │     ├─ reference/           # リファレンス実装（Godot プロジェクト。子モデルには渡さない）
-│  │     └─ hidden-tests/        # 隠しテスト（子モデルには渡さない）
-│  └─ 202607_delegate_implement_bench/
-│     ├─ impressions.md          # 委譲先モデルの定性所感
-│     └─ runs/                   # ラン成果物（gitignore。集計レポートのみコミット）
-├─ docs/
-│  ├─ design/bench_common_design.md
-│  │                               # 共通基盤（対象モデル、実行アーキテクチャ、計測、公平性）
-│  ├─ design/delegate_implement_bench_design.md
-│  │                               # Conveyor Courier ベンチ（課題仕様、採点、マイルストーン）
-│  └─ design/development.md      # 開発基盤（テンプレート由来）
-├─ AGENTS.md / CLAUDE.md          # エージェント向け指示
-└─ package.json
-```
-
-## 開発コマンド
-
-| コマンド              | 説明                                                                   |
-| --------------------- | ---------------------------------------------------------------------- |
-| `bash local_setup.sh` | 依存関係、エージェント CLI・skill、OS package、git hook のセットアップ |
-| `npm run check`       | format / lint / type check                                             |
-| `npm run check:fix`   | 自動修正付き check                                                     |
-| `npm run test`        | Vitest テスト                                                          |
-| `npm run build`       | `dist/` へビルド                                                       |
-
-本プロジェクトが基盤とする npm パッケージテンプレート由来の開発基盤（エージェント hook、devcontainer、pack:check、テンプレート更新運用）は [docs/design/development.md](docs/design/development.md) に記載する。
+ディレクトリ構成と開発コマンド（セットアップ、check / test / build）は [docs/design/development.md](docs/design/development.md) を参照。
 
 ## ドキュメント
 

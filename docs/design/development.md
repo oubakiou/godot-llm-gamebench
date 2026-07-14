@@ -40,6 +40,30 @@ bash local_setup.sh
 
 開発中は小さい変更ごとに `npm run check` と `npm run test` を通し、公開 API / package exports / build 出力に触れた場合は `npm run pack:check` まで確認する。
 
+## ディレクトリ構成
+
+```text
+.
+├─ src/bench/                    # Orchestrator: run / grade / regrade / report / export CLI（TypeScript, in-source test）
+├─ benchmarks/
+│  ├─ tasks/                     # ラウンド間で共有する課題ソース
+│  │  └─ conveyor-courier/
+│  │     ├─ prompt.md            # 子モデルへ渡す凍結済み課題文
+│  │     ├─ reference/           # リファレンス実装（Godot プロジェクト。子には見せない）
+│  │     └─ hidden-tests/        # 隠しテストランナー（子には見せない）
+│  └─ 202607_delegate_implement_bench/
+│     ├─ impressions.md          # 委譲した子モデルごとの定性メモ（結果の正本）
+│     └─ runs/                   # ラン成果物（gitignore。集計レポートのみコミット）
+├─ docs/
+│  ├─ design/bench_common_design.md
+│  │                               # 委譲ベンチ共通基盤: 対象モデル、アーキテクチャ、計測、公平性
+│  ├─ design/delegate_implement_bench_design.md
+│  │                               # Conveyor Courier ベンチ: 課題仕様、採点、マイルストーン
+│  └─ design/development.md      # 開発基盤（テンプレート由来）
+├─ AGENTS.md / CLAUDE.md          # エージェント向け指示
+└─ package.json
+```
+
 ## テスト方針
 
 テストは in-source testing を使う。実装ファイル末尾に `if (import.meta.vitest)` ブロックを置き、対象ロジックの正常系、境界条件、異常系を実装と同じファイルで管理する。
@@ -60,13 +84,10 @@ if (import.meta.vitest) {
 
 ## 設計ドキュメント
 
-永続的な設計判断は `docs/design/` 配下に集約する。委譲ベンチ共通基盤は [bench_common_design.md](./bench_common_design.md)、各ベンチ固有の設計は `delegate_*_bench_design.md` に置く。ビルドと package 出力の詳細は [build-pipeline.md](./build-pipeline.md)、今後の方向性は [roadmap.md](./roadmap.md) を参照。
+永続的な設計判断は `docs/design/` 配下に集約する。委譲ベンチ共通基盤は [bench_common_design.md](./bench_common_design.md)、各ベンチ固有の設計は `delegate_*_bench_design.md` に置く。
 
 - [bench_common_design.md](./bench_common_design.md) — 委譲ベンチ共通基盤（対象モデル、実行アーキテクチャ、計測、公平性）
 - [delegate_implement_bench_design.md](./delegate_implement_bench_design.md) — delegate-implement ベンチ（Conveyor Courier）の課題仕様、採点、マイルストーン
-- [delegate_review_bench_design.md](./delegate_review_bench_design.md) — delegate-review ベンチの課題仕様、採点、マイルストーン
-- [build-pipeline.md](./build-pipeline.md) — TypeScript build、`dist/`、npm tarball
-- [roadmap.md](./roadmap.md) — テンプレート改善の候補
 
 ## ドキュメントプロセス
 

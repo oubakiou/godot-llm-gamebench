@@ -11,10 +11,6 @@
 
 A parent agent (Claude Code) delegates a Godot 4.x + typed GDScript implementation task to child models (Codex / Devin / Cursor / Claude) through the `delegate-implement` skill, one run per model per repetition. Each run is scored by a headless grader against hidden tests, and its wall-clock time, round trips, and token cost are recorded. The goal is to compare "model + execution-harness CLI" combinations under a fixed spec, rather than to rank model weights in isolation.
 
-## The task: Conveyor Courier
-
-The benchmark task is **Conveyor Courier**, a custom tick-driven puzzle where packages flow across a grid and must be routed to the correctly colored exit by placing and rotating conveyor belts. It is an original spec (not a well-known game like Tetris) chosen to reduce contamination from prior training exposure, so that what's actually measured is the ability to read a spec and turn it into a correct implementation. The task prompt handed to child models is frozen at `benchmarks/tasks/conveyor-courier/prompt.md`, and the same byte-identical text is used for every model and every repetition. Hidden tests and the reference implementation are kept out of the child's workspace and are not described here.
-
 ## What gets measured
 
 Scoring runs on two independent axes and they are never combined into one number.
@@ -27,6 +23,10 @@ See [docs/design/delegate_implement_bench_design.md](docs/design/delegate_implem
 ## Past benchmarks
 
 ### 202607_delegate_implement_bench (July 2026)
+
+#### The task: Conveyor Courier
+
+The benchmark task is **Conveyor Courier**, a custom tick-driven puzzle where packages flow across a grid and must be routed to the correctly colored exit by placing and rotating conveyor belts. It is an original spec (not a well-known game like Tetris) chosen to reduce contamination from prior training exposure, so that what's actually measured is the ability to read a spec and turn it into a correct implementation. The task prompt handed to child models is frozen at `benchmarks/tasks/conveyor-courier/prompt.md`, and the same byte-identical text is used for every model and every repetition. Hidden tests and the reference implementation are kept out of the child's workspace and are not described here.
 
 Canonical results: [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md) (Japanese — summary table, per-model notes, measurement history, follow-up A/Bs, and the judge cross-check).
 
@@ -69,41 +69,7 @@ Metric definitions (grading rubric, cost accounting, and the two-judge + operato
 | `npm run bench:report`  | Aggregate run results into a Markdown report                           |
 | `npm run bench:export`  | Export each model's game to Web and build the browser-playable gallery |
 
-## Directory layout
-
-```text
-.
-├─ src/bench/                    # Orchestrator: run / grade / report CLI (TypeScript, in-source test)
-├─ benchmarks/
-│  ├─ tasks/                     # Shared task sources across rounds
-│  │  └─ conveyor-courier/
-│  │     ├─ prompt.md            # Frozen task prompt handed to child models
-│  │     ├─ reference/           # Reference implementation (Godot project, not shown to children)
-│  │     └─ hidden-tests/        # Hidden test runner (not shown to children)
-│  └─ 202607_delegate_implement_bench/
-│     ├─ impressions.md          # Qualitative notes on each delegated child model
-│     └─ runs/                   # Run artifacts (gitignored; only aggregate reports are committed)
-├─ docs/
-│  ├─ design/bench_common_design.md
-│  │                               # Shared benchmark foundation: roster, architecture, measurement, fairness
-│  ├─ design/delegate_implement_bench_design.md
-│  │                               # Conveyor Courier benchmark: task spec, grading, milestones
-│  └─ design/development.md      # Development infrastructure (template-derived)
-├─ AGENTS.md / CLAUDE.md          # Agent instructions
-└─ package.json
-```
-
-## Development commands
-
-| Command               | Description                                                         |
-| --------------------- | ------------------------------------------------------------------- |
-| `bash local_setup.sh` | Install dependencies, agent CLIs and skills, OS packages, git hooks |
-| `npm run check`       | format / lint / type check                                          |
-| `npm run check:fix`   | Auto-fixable checks                                                 |
-| `npm run test`        | Vitest tests                                                        |
-| `npm run build`       | Build into `dist/`                                                  |
-
-The npm-package-template infrastructure this project is built on (agent hooks, devcontainer, pack:check, template-update workflow) is documented in [docs/design/development.md](docs/design/development.md).
+Directory layout and development commands (setup, check / test / build) are documented in [docs/design/development.md](docs/design/development.md).
 
 ## Documentation
 
