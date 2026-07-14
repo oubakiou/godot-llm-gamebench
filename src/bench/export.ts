@@ -952,6 +952,7 @@ const pageHtml = (title: string, bodyHtml: string, lang: 'ja' | 'en'): string =>
 <title>${escapeHtml(title)}</title>
 <style>
 body{font-family:system-ui,sans-serif;margin:2rem;color:#1f2933;background:#f7f8fa}
+h1,code{overflow-wrap:anywhere}
 .tablewrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;background:white}
 th,td{border:1px solid #d8dde3;padding:.55rem .7rem;text-align:left;vertical-align:top}
