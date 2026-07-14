@@ -94,11 +94,11 @@ const initWorkspace = (runDir: string, direct: boolean, childSkill?: string): st
     const skillName = basename(childSkill)
     mkdirSync(join(workspace, '.claude/skills'), { recursive: true })
     cpSync(childSkill, join(workspace, '.claude/skills', skillName), { recursive: true })
-    writeFileSync(
-      join(workspace, 'CLAUDE.md'),
-      `GDScript の実装・修正を行う実装者は、開始前に .claude/skills/${skillName}/SKILL.md を読み、その規約に従い、同梱の検証スクリプトで headless 検証すること。\n`,
-      { flag: 'a' }
-    )
+    const skillInstruction = `GDScript の実装・修正を行う実装者は、開始前に .claude/skills/${skillName}/SKILL.md を読み、その規約に従い、同梱の検証スクリプトで headless 検証すること。\n`
+    writeFileSync(join(workspace, 'CLAUDE.md'), skillInstruction, { flag: 'a' })
+    // Cursor 系の子は CLAUDE.md を自動では読まない。delegate-cursor.sh のプロンプトが
+    // 「AGENTS.md / CLAUDE.md の規約に従うこと」と指示するため、AGENTS.md にも同文を置く
+    writeFileSync(join(workspace, 'AGENTS.md'), skillInstruction, { flag: 'a' })
   }
   spawnSync('git', ['init'], { cwd: workspace, stdio: 'ignore' })
   return workspace

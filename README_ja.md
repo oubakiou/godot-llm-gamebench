@@ -57,7 +57,7 @@
 | ----------------------- | -------------------------: | ----------------------------------------- | ---------------------------- | ---------------: | --------------------------------- |
 | fable-direct (委譲なし) |                     300.00 | 4.6 (4.7, 4.5) — 3 ラン安定・型規律最上位 | $2.62 + $0（計 $2.62、実測） |           5.7 分 | ベースライン: 親 Fable の直接実装 |
 
-各指標の定義（採点ルーブリック、費用の算定方法、コード品質の判定体制と代表値の規則）と、追試 1（reasoning effort A/B）・追試 2（gdscript-quality skill A/B）・判定者クロスチェックの結果は [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md) を参照。
+各指標の定義（採点ルーブリック、費用の算定方法、コード品質の判定体制と代表値の規則）と、追試 1（reasoning effort A/B）・追試 2（gdscript-quality skill A/B）・追試 3（同 skill × Cursor 実行系）・判定者クロスチェックの結果は [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md) を参照。
 
 ## bench コマンド
 

@@ -57,7 +57,7 @@ Baseline condition (does not go through the delegation protocol; do not compare 
 | ---------------------------- | ----------------------: | -------------------------------------------------------- | ---------------------------------- | ------------------: | ------------------------------------------------ |
 | fable-direct (no delegation) |                  300.00 | 4.6 (4.7, 4.5) — stable across runs, top type discipline | $2.62 + $0 (total $2.62, measured) |             5.7 min | Baseline: the parent (Fable) implements directly |
 
-Metric definitions (grading rubric, cost accounting, and the two-judge + operator-adjudication scheme behind the code-quality column), plus follow-up 1 (reasoning effort A/B), follow-up 2 (gdscript-quality skill A/B), and the judge cross-check, are all in [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md).
+Metric definitions (grading rubric, cost accounting, and the two-judge + operator-adjudication scheme behind the code-quality column), plus follow-up 1 (reasoning effort A/B), follow-up 2 (gdscript-quality skill A/B), follow-up 3 (the same skill on a Cursor-harness child), and the judge cross-check, are all in [benchmarks/202607_delegate_implement_bench/impressions.md](benchmarks/202607_delegate_implement_bench/impressions.md).
 
 ## Bench commands
 
