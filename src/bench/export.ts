@@ -670,27 +670,43 @@ ${legacyTableHtml(entries)}`
   const leftoversHtml =
     leftovers.length === 0
       ? ''
-      : `<h2>その他のエントリ</h2>
+      : `<h2 id="others">その他のエントリ</h2>
 ${legacyTableHtml(leftovers)}`
   const baselineHtml =
     summary.baseline.length === 0
       ? ''
-      : `<p>ベースライン条件（委譲プロトコルを通らない別条件のため参考値。上表とは直接比較しないこと）:</p>
+      : `<p id="baseline">ベースライン条件（委譲プロトコルを通らない別条件のため参考値。上表とは直接比較しないこと）:</p>
 ${summaryTableHtml(summary.baseline, entriesBySlug, '条件')}`
   const followUpsHtml = summary.followUps
     .map(
-      (section) => `<h2>${escapeHtml(section.heading)}</h2>
+      (section, index) => `<h2 id="followup-${index + 1}">${escapeHtml(section.heading)}</h2>
 <p>条件付き計測（A/B）のため、本計測サマリーの表とは直接比較しないこと。</p>
 ${summaryTableHtml(section.rows, entriesBySlug, '条件')}`
     )
     .join('\n')
+  const tocItems = [
+    '<li><a href="#summary">本計測サマリー</a></li>',
+    ...(summary.baseline.length > 0 ? ['<li><a href="#baseline">ベースライン条件</a></li>'] : []),
+    ...summary.followUps.map(
+      (section, index) =>
+        `<li><a href="#followup-${index + 1}">${escapeHtml(section.heading)}</a></li>`
+    ),
+    ...(leftovers.length > 0 ? ['<li><a href="#others">その他のエントリ</a></li>'] : []),
+  ]
+  const tocHtml = `<nav>
+<h2>目次</h2>
+<ul>
+${tocItems.join('\n')}
+</ul>
+</nav>`
   const title = `Conveyor Courier ギャラリー — ${bench}`
   return pageHtml(
     title,
     `<h1>${escapeHtml(title)}</h1>
 <p>ベンチで生成された Conveyor Courier 実装の Web エクスポート。モデル名のリンクから代表 run（採用 rep の総合スコア中央値）の実装をブラウザでプレイできる。</p>
 ${referenceHtml}
-<h2>本計測サマリー</h2>
+${tocHtml}
+<h2 id="summary">本計測サマリー</h2>
 <p>表の数値は <code>benchmarks/${escapeHtml(bench)}/impressions.md</code> の本計測サマリー（各モデル 3 反復の採用値）からの転記。指標の定義は同ファイルの脚注を参照。</p>
 ${summaryTableHtml(summary.main, entriesBySlug, 'モデル')}
 ${baselineHtml}

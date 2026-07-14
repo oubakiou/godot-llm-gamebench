@@ -2,6 +2,46 @@
 
 > ベンチ準備・運用中の delegate-implement 委譲で得た、親エージェント（Fable）視点の主観的観察。サンプル数は小さく、定量結果の正本（`node src/bench/cli.ts report` の集計）とは区別して扱う。委譲のたびに追記する。
 
+## 目次
+
+- [本計測サマリー](#本計測サマリー)
+- [ベンチ対象モデル（採用結果）](#ベンチ対象モデル採用結果)
+  - [claude-sonnet-5（Claude CLI）](#claude-sonnet-5claude-cli)
+  - [swe-1.7（Devin CLI）](#swe-17devin-cli)
+  - [gpt-5.5（Codex CLI）](#gpt-55codex-cli)
+  - [cursor-grok-4.5（Cursor CLI、ラウンド 3 採用）](#cursor-grok-45cursor-cliラウンド-3-採用)
+  - [gpt-5.4-mini（Codex CLI）](#gpt-54-minicodex-cli)
+  - [devin-deepseek-v4-pro（Devin CLI）](#devin-deepseek-v4-prodevin-cli)
+  - [composer-2.5（Cursor CLI、ラウンド 3 採用）](#composer-25cursor-cliラウンド-3-採用)
+  - [composer-2.5-fast（Cursor CLI、ラウンド 3 採用）](#composer-25-fastcursor-cliラウンド-3-採用)
+  - [gpt-5.6-sol（Codex CLI）](#gpt-56-solcodex-cli)
+  - [gpt-5.6-terra（Codex CLI）](#gpt-56-terracodex-cli)
+  - [claude-opus-4-8（Claude CLI）](#claude-opus-4-8claude-cli)
+  - [devin-glm-5.2（Devin CLI）](#devin-glm-52devin-cli)
+  - [cursor-gemini-3.1-pro（Cursor CLI、ラウンド 3 採用）](#cursor-gemini-31-procursor-cliラウンド-3-採用)
+  - [cursor-kimi-k2.7-code（Cursor CLI、ラウンド 3 採用）](#cursor-kimi-k27-codecursor-cliラウンド-3-採用)
+  - [gpt-5.3-codex-spark（Codex CLI）](#gpt-53-codex-sparkcodex-cli)
+  - [gpt-5.6-luna（Codex CLI）](#gpt-56-lunacodex-cli)
+  - [swe-1.6（Devin CLI）](#swe-16devin-cli)
+  - [claude-haiku-4-5（Claude CLI）](#claude-haiku-4-5claude-cli)
+  - [fable-direct（Claude CLI、委譲なしベースライン）](#fable-directclaude-cli委譲なしベースライン)
+- [計測の経緯（ラウンド履歴）](#計測の経緯ラウンド履歴)
+  - [本計測ラウンド（2026-07-05、委譲 7 モデル + fable-direct）](#本計測ラウンド2026-07-05委譲-7-モデル--fable-direct)
+  - [追加ラウンド（2026-07-05〜06、delegate-skills サポートモデル拡充に伴う追加 5 モデル + Haiku4.5）](#追加ラウンド2026-07-0506delegate-skills-サポートモデル拡充に伴う追加-5-モデル--haiku45)
+  - [追加ラウンド 2（2026-07-10、gpt-5.6 系 3 モデル + swe-1.7 + cursor-grok-4.5）](#追加ラウンド-22026-07-10gpt-56-系-3-モデル--swe-17--cursor-grok-45)
+  - [ラウンド 3（2026-07-10、Cursor 系 5 モデルの再計測）](#ラウンド-32026-07-10cursor-系-5-モデルの再計測)
+  - [再集計（2026-07-13、View 挙動テスト追加 + 配分 70/10/10/10）](#再集計2026-07-13view-挙動テスト追加--配分-70101010)
+- [追試（2026-07-11、gpt-5.6-luna の reasoning effort A/B: medium vs xhigh）](#追試2026-07-11gpt-56-luna-の-reasoning-effort-ab-medium-vs-xhigh)
+- [番外編（gdscript-quality skill の A/B、ベンチ外の副産物実験）](#番外編gdscript-quality-skill-の-abベンチ外の副産物実験)
+- [追試 2（2026-07-11、gdscript-quality skill × 本ベンチ: claude-sonnet-5 / claude-opus-4-8 の skill あり/なし A/B）](#追試-22026-07-11gdscript-quality-skill--本ベンチ-claude-sonnet-5--claude-opus-4-8-の-skill-ありなし-ab)
+- [追試 3（2026-07-14、gdscript-quality skill × Cursor 実行系: composer-2.5 の skill あり/なし A/B）](#追試-32026-07-14gdscript-quality-skill--cursor-実行系-composer-25-の-skill-ありなし-ab)
+- [判定者クロスチェック（2026-07-12、gpt-5.6-sol による本計測全採用ランのコード品質再精査）](#判定者クロスチェック2026-07-12gpt-56-sol-による本計測全採用ランのコード品質再精査)
+- [ベンチ対象外モデル（ハーネス検証・準備で使用）](#ベンチ対象外モデルハーネス検証準備で使用)
+  - [haiku（Claude CLI、E2E ドライラン専用。正式ランはベンチ対象モデルの claude-haiku-4-5 欄を参照）](#haikuclaude-clie2e-ドライラン専用正式ランはベンチ対象モデルの-claude-haiku-4-5-欄を参照)
+  - [sonnet（Claude CLI、当時 Sonnet 4.6）](#sonnetclaude-cli当時-sonnet-46)
+- [ラウンド横断の観察](#ラウンド横断の観察)
+- [ハーネス側の注意（モデル所感ではないが委譲品質に影響）](#ハーネス側の注意モデル所感ではないが委譲品質に影響)
+
 ## 本計測サマリー
 
 各モデル 3 反復の採用値（(model, rep) ごとに最新 completed を採用）に基づく最終結果。計測時期・ラウンド構成・CLI バージョン・再計測の経緯は「計測の経緯」欄を参照。
