@@ -1,6 +1,6 @@
 # リファクタリング計画
 
-[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Ftypescript-agent-package-template%2Frefs%2Fheads%2Fmain%2Fdocs%2Frefactoring%2Frefactoring-plan-template.md)
+[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Fgodot-llm-gamebench%2Frefs%2Fheads%2Fmain%2Fdocs%2Frefactoring%2Frefactoring-plan-template.md)
 
 > **このファイルはリファクタリング計画のテンプレートです**。挙動を変えずに保守性・拡張性・テスタビリティを上げる候補を整理するために使う。新しい計画は `docs/refactoring/<topic>.md` として作成し、完了後は `docs/archive/<topic>.archive.md` にリネームしてアーカイブする。
 

@@ -24,6 +24,8 @@ See [docs/design/delegate_implement_bench_design.md](docs/design/delegate_implem
 
 ### 202607_delegate_implement_bench (July 2026)
 
+> **Frozen round**: with this repository now public, the task prompt, hidden tests, and reference implementation for this round are exposed. The 202607 round is therefore closed as "published" — its scores will not be re-measured, and any future measurement will run as a new round with a swapped task variant. Score comparisons are only valid within a single round.
+
 #### The task: Conveyor Courier
 
 The benchmark task is **Conveyor Courier**, a custom tick-driven puzzle where packages flow across a grid and must be routed to the correctly colored exit by placing and rotating conveyor belts. It is an original spec (not a well-known game like Tetris) chosen to reduce contamination from prior training exposure, so that what's actually measured is the ability to read a spec and turn it into a correct implementation. The task prompt handed to child models is frozen at `benchmarks/tasks/conveyor-courier/prompt.md`, and the same byte-identical text is used for every model and every repetition. Hidden tests and the reference implementation are kept out of the child's workspace and are not described here.

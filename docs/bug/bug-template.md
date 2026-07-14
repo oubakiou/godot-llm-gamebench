@@ -1,6 +1,6 @@
 # [BUG] {問題を 1 行で要約}
 
-[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Ftypescript-agent-package-template%2Frefs%2Fheads%2Fmain%2Fdocs%2Fbug%2Fbug-template.md)
+[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Fgodot-llm-gamebench%2Frefs%2Fheads%2Fmain%2Fdocs%2Fbug%2Fbug-template.md)
 
 > **このファイルはバグ修正プランのテンプレートです**。新しいバグを起票する際は本ファイルをコピーして `docs/bug/bug-<topic>.md` として配置し、`{プレースホルダ}` を埋める / 引用ブロック内のガイドを削除する形で使う。修正が完了したら `docs/archive/bug-<topic>.archive.md` にリネームしてアーカイブする。
 >

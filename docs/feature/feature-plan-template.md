@@ -1,6 +1,6 @@
 # {タスク名} 設計・実装計画
 
-[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Ftypescript-agent-package-template%2Frefs%2Fheads%2Fmain%2Fdocs%2Ffeature%2Ffeature-plan-template.md)
+[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Fgodot-llm-gamebench%2Frefs%2Fheads%2Fmain%2Fdocs%2Ffeature%2Ffeature-plan-template.md)
 
 > **このファイルは設計・実装プランのテンプレートです**。新しい機能や大きめの変更を起票する際は本ファイルを `docs/feature/<topic>.md` としてコピーし、`{プレースホルダ}` を埋める / 引用ブロック内のガイドを削除する形で使う。完了したプランは `docs/archive/<topic>.archive.md` にリネームしてアーカイブする。
 

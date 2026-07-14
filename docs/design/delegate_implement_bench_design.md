@@ -1,6 +1,8 @@
 # 設計 — delegate-implement ベンチ（Conveyor Courier）
 
 > 本書は `delegate-implement` skill の性能を測る Conveyor Courier ベンチ固有の設計をまとめる。モデル roster、実行アーキテクチャ、計測メトリクス、公平性・カンニング防止、共通リポジトリ構成、開発基盤は [bench_common_design.md](./bench_common_design.md) を参照。
+>
+> **凍結注記**: 202607 ラウンドはリポジトリ public 化に伴い「公開済み」扱いで凍結した。`prompt.md`・reference・hidden-tests は公開されており、以後の再測定は共通基盤の「隠し資産の露出」運用に従い、バリアントを差し替えた新ラウンドとして実施する（スコア比較は同一ラウンド内に限定）。
 
 ## 1. 目的
 

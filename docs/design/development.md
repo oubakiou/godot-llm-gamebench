@@ -1,6 +1,6 @@
 # 開発
 
-[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Ftypescript-agent-package-template%2Frefs%2Fheads%2Fmain%2Fdocs%2Fdesign%2Fdevelopment.md)
+[![MKDN](https://img.shields.io/badge/MKDN-review-red?style=for-the-badge)](https://mkdn.review/?url=https%3A%2F%2Fraw.githubusercontent.com%2Foubakiou%2Fgodot-llm-gamebench%2Frefs%2Fheads%2Fmain%2Fdocs%2Fdesign%2Fdevelopment.md)
 
 > 本書は開発者向けの入口ドキュメント。ローカル開発、チェック、テスト、ビルド、npm package の確認、エージェント hook、ドキュメント運用を 1 枚にまとめる。
 
