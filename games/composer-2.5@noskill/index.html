@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conveyor Courier — composer-2.5@noskill</title>
+<meta property="og:site_name" content="godot-llm-gamebench">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Conveyor Courier — composer-2.5@noskill">
+<meta property="og:description" content="composer-2.5@noskill が実装した Conveyor Courier（代表 run）をブラウザでプレイできる。自動採点の内訳つき。">
+<meta property="og:url" content="https://oubakiou.github.io/godot-llm-gamebench/games/composer-2.5@noskill/index.html">
+<meta property="og:image" content="https://oubakiou.github.io/godot-llm-gamebench/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+body{margin:0;font-family:system-ui,sans-serif;display:flex;height:100vh;background:#111;color:#1f2933}
+iframe{flex:1;border:0;min-width:0;height:100%}
+aside{width:400px;overflow-y:auto;background:#f7f8fa;padding:1.1rem 1.3rem;box-sizing:border-box}
+h1{font-size:1.25rem;margin:.4rem 0}
+h2{font-size:1rem;margin:1.1rem 0 .4rem}
+h3{font-size:.95rem;margin:1rem 0 .3rem}
+.pts{font-weight:normal;color:#6b7280;font-size:.85rem}
+table{border-collapse:collapse;width:100%;background:white}
+th,td{border:1px solid #d8dde3;padding:.4rem .55rem;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+td.res{white-space:nowrap}
+th{background:#e9edf2}
+td.num{text-align:right;white-space:nowrap}
+a{color:#0b63ce}
+small{color:#6b7280}
+code{background:#eef1f4;padding:0 .25em;border-radius:3px}
+ul{padding-left:1.2rem}
+li{margin:.3rem 0}
+@media (max-width: 900px){body{flex-direction:column;height:auto}iframe{flex:none;width:100%;height:70vh}aside{width:100%}}
+</style>
+</head>
+<body>
+<iframe src="game.html" title="Conveyor Courier — composer-2.5@noskill" allow="fullscreen"></iframe>
+<aside>
+<p><a href="../../index.html">← 一覧へ戻る</a> | <a href="index.en.html">English</a></p>
+<h1>composer-2.5@noskill</h1>
+<p><small>代表 run: 20260714T051504Z-composer-2.5_noskill-rep1</small></p>
+<h2>自動採点</h2>
+<table>
+<thead><tr><th>項目</th><th>得点</th></tr></thead>
+<tbody>
+<tr><td>機能（隠しテスト）</td><td class="num">68.06 / 70</td></tr>
+<tr><td>決定性</td><td class="num">10 / 10</td></tr>
+<tr><td>型品質<small>（strict 警告 9 件）</small></td><td class="num">0 / 10</td></tr>
+<tr><td>プロジェクト健全性</td><td class="num">10 / 10</td></tr>
+<tr><th>合計</th><td class="num"><strong>88.06 / 100</strong></td></tr>
+</tbody>
+</table>
+<h2>採点内訳</h2>
+<h3>機能（隠しテスト） <span class="pts">68.06 / 70</span></h3>
+<table>
+<thead><tr><th>カテゴリ</th><th>テスト</th><th>合否</th></tr></thead>
+<tbody>
+<tr><td rowspan="1">契約（ロードと API 形状）<br><small>contract</small></td><td>board_model のロード・インスタンス化・必須 API と enum の存在<br><small>load / instantiate / API / enums</small></td><td>✅</td></tr>
+<tr><td rowspan="7">API 挙動<br><small>api</small></td><td>setup() 直後の初期状態が仕様どおり<br><small>setup initial state</small></td><td>✅</td></tr>
+<tr><td>受け入れ例どおりのスポーンと序盤の移動<br><small>acceptance spawn and early movement</small></td><td>✅</td></tr>
+<tr><td>get_cell の ASCII マッピングと盤外の扱い<br><small>get_cell ASCII mapping and out of bounds</small></td><td>✅</td></tr>
+<tr><td>place_belt の配置可否ルール<br><small>place_belt rules</small></td><td>✅</td></tr>
+<tr><td>rotate_cell の回転可否ルール<br><small>rotate_cell rules</small></td><td>✅</td></tr>
+<tr><td>spawn_item の成否ルールと乱数を消費しないこと<br><small>spawn_item rules and RNG non-consumption</small></td><td>✅</td></tr>
+<tr><td>peek_next_kind が安定し実際のスポーン色と一致する<br><small>peek_next_kind is stable and matches spawn</small></td><td>✅</td></tr>
+<tr><td rowspan="4">移動<br><small>movement</small></td><td>直線ベルトで 1 tick に 1 マス進む<br><small>straight belts move one cell per tick</small></td><td>✅</td></tr>
+<tr><td>隣接する 2 個が同一 tick で追従して進む<br><small>adjacent pair follows in the same tick</small></td><td>✅</td></tr>
+<tr><td>ループ上の 3 個が全て前進する<br><small>three items in loop all advance</small></td><td>✅</td></tr>
+<tr><td>満杯のループは停滞し全荷物がミスになる<br><small>full loop stalls then misses</small></td><td>✅</td></tr>
+<tr><td rowspan="4">衝突・停滞<br><small>collision</small></td><td>同一の空きマスへの合流は小さい id が優先される<br><small>merge to same empty cell chooses low id</small></td><td>✅</td></tr>
+<tr><td>正面からの入れ替わり移動はブロックされる<br><small>head-on swap is blocked</small></td><td>✅</td></tr>
+<tr><td>5 tick 停滞した荷物はミスになる<br><small>blocked item misses after five ticks</small></td><td>✅</td></tr>
+<tr><td>移動できると停滞カウンタがリセットされる<br><small>stuck counter resets after movement</small></td><td>✅</td></tr>
+<tr><td rowspan="5">搬出と得点<br><small>exit_scoring</small></td><td>色が一致する出口で得点し荷物が消える<br><small>matching exit scores and removes item</small></td><td>✅</td></tr>
+<tr><td>色違いの出口はミスになる<br><small>wrong exit misses</small></td><td>✅</td></tr>
+<tr><td>同じ出口に同一 tick で 2 個搬入できる<br><small>two items can enter same exit</small></td><td>✅</td></tr>
+<tr><td>盤外への移動はミスになる<br><small>off-board movement misses</small></td><td>✅</td></tr>
+<tr><td>出口へ抜けたマスを後続が同一 tick で使える<br><small>exit departure frees previous cell for follower</small></td><td>✅</td></tr>
+<tr><td rowspan="5">スプリッター<br><small>splitter</small></td><td>スプリッターが右→左→右と交互に振り分ける<br><small>splitter alternates right left right</small></td><td>✅</td></tr>
+<tr><td>スプリッターごとにトグル状態が独立している<br><small>splitter toggles are independent</small></td><td>✅</td></tr>
+<tr><td>送出できなかったスプリッターはトグルしない<br><small>blocked splitter does not toggle</small></td><td>✅</td></tr>
+<tr><td>出口搬入・盤外退場でもトグルが反転する<br><small>splitter toggles on exit and off-board departure</small></td><td>✅</td></tr>
+<tr><td>「右」が進入方向に対する相対方向である<br><small>splitter right is relative to entry direction</small></td><td>✅</td></tr>
+<tr><td rowspan="4">スポーンとミス<br><small>spawn_miss</small></td><td>スポーンが t=1,4,7… の周期で発生する<br><small>spawn schedule is t=1,4,7</small></td><td>✅</td></tr>
+<tr><td>入口封鎖時のスポーンはミスになり乱数を消費する<br><small>blocked spawn misses and consumes RNG</small></td><td>✅</td></tr>
+<tr><td>入口封鎖時のスポーンでも id は消費される<br><small>blocked spawn consumes id</small></td><td>✅</td></tr>
+<tr><td>t=120 で終了し以降の tick で状態が変化しない<br><small>finish at t=120 freezes future ticks</small></td><td>✅</td></tr>
+<tr><td rowspan="2">決定性<br><small>determinism</small></td><td>同一シード・同一操作列で結果が完全一致する<br><small>same seed and operations produce same results</small></td><td>✅</td></tr>
+<tr><td>スポーン色の系列が RandomNumberGenerator の仕様と一致する<br><small>spawn color sequence matches RandomNumberGenerator</small></td><td>✅</td></tr>
+<tr><td rowspan="1">勝利経路<br><small>win_path</small></td><td>標準マップで単純な操作方針により勝利閾値へ到達できる<br><small>standard map simple controller reaches win threshold</small></td><td>✅</td></tr>
+<tr><td rowspan="3">View 挙動<br><small>view</small></td><td>表示文字がフォントに存在する（豆腐なし）<br><small>labels have no missing glyphs</small></td><td>✅</td></tr>
+<tr><td>tick が実時間 0.5 秒間隔で進む<br><small>tick advances at 0.5s interval</small></td><td>✅</td></tr>
+<tr><td>クリックで空セルにベルトを設置できる<br><small>mouse click places a belt</small><br><small>詳細: placed=0 clicks=320 empties=50 finished_during_test=false</small></td><td>❌</td></tr>
+</tbody>
+</table>
+
+<h3>決定性 <span class="pts">10 / 10</span></h3>
+<table>
+<thead><tr><th>項目</th><th>結果</th></tr></thead>
+<tbody>
+<tr><td>同一 seed・同一操作列で結果が再現する（determinism カテゴリ全テスト成功で満点）</td><td class="res">✅</td></tr>
+</tbody>
+</table>
+<h3>型品質 <span class="pts">0 / 10</span></h3>
+<table>
+<thead><tr><th>項目</th><th>結果</th></tr></thead>
+<tbody>
+<tr><td>strict 型警告（untyped / unsafe を error 昇格した per-file 検査）9 件 × −2（下限 0）</td><td class="res">❌</td></tr>
+</tbody>
+</table>
+<h3>プロジェクト健全性 <span class="pts">10 / 10</span></h3>
+<table>
+<thead><tr><th>項目</th><th>結果</th></tr></thead>
+<tbody>
+<tr><td>プロジェクト import（godot --headless --import）</td><td class="res">✅ 3 / 3</td></tr>
+<tr><td>起動 smoke（main.tscn の headless 起動）</td><td class="res">✅ 3 / 3</td></tr>
+<tr><td>API 契約（BoardModel の Scene 非依存ロードと契約テスト）</td><td class="res">✅ 4 / 4</td></tr>
+</tbody>
+</table>
+</aside>
+</body>
+</html>

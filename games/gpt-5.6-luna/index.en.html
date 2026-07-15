@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conveyor Courier — gpt-5.6-luna</title>
+<meta property="og:site_name" content="godot-llm-gamebench">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Conveyor Courier — gpt-5.6-luna">
+<meta property="og:description" content="Play the Conveyor Courier implementation by gpt-5.6-luna (representative run) in your browser, with the auto-graded score breakdown.">
+<meta property="og:url" content="https://oubakiou.github.io/godot-llm-gamebench/games/gpt-5.6-luna/index.en.html">
+<meta property="og:image" content="https://oubakiou.github.io/godot-llm-gamebench/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+body{margin:0;font-family:system-ui,sans-serif;display:flex;height:100vh;background:#111;color:#1f2933}
+iframe{flex:1;border:0;min-width:0;height:100%}
+aside{width:400px;overflow-y:auto;background:#f7f8fa;padding:1.1rem 1.3rem;box-sizing:border-box}
+h1{font-size:1.25rem;margin:.4rem 0}
+h2{font-size:1rem;margin:1.1rem 0 .4rem}
+h3{font-size:.95rem;margin:1rem 0 .3rem}
+.pts{font-weight:normal;color:#6b7280;font-size:.85rem}
+table{border-collapse:collapse;width:100%;background:white}
+th,td{border:1px solid #d8dde3;padding:.4rem .55rem;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+td.res{white-space:nowrap}
+th{background:#e9edf2}
+td.num{text-align:right;white-space:nowrap}
+a{color:#0b63ce}
+small{color:#6b7280}
+code{background:#eef1f4;padding:0 .25em;border-radius:3px}
+ul{padding-left:1.2rem}
+li{margin:.3rem 0}
+@media (max-width: 900px){body{flex-direction:column;height:auto}iframe{flex:none;width:100%;height:70vh}aside{width:100%}}
+</style>
+</head>
+<body>
+<iframe src="game.html" title="Conveyor Courier — gpt-5.6-luna" allow="fullscreen"></iframe>
+<aside>
+<p><a href="../../en/index.html">← Back to list</a> | <a href="index.html">日本語</a></p>
+<h1>gpt-5.6-luna</h1>
+<p><small>Representative run: 20260710T020817Z-gpt-5.6-luna-rep1</small></p>
+<h2>Auto-graded score</h2>
+<table>
+<thead><tr><th>Item</th><th>Score</th></tr></thead>
+<tbody>
+<tr><td>Functionality (hidden tests)</td><td class="num">62.22 / 70</td></tr>
+<tr><td>Determinism</td><td class="num">10 / 10</td></tr>
+<tr><td>Type quality<small>(strict warnings: 6)</small></td><td class="num">0 / 10</td></tr>
+<tr><td>Project health</td><td class="num">10 / 10</td></tr>
+<tr><th>Total</th><td class="num"><strong>82.22 / 100</strong></td></tr>
+</tbody>
+</table>
+<h2>Score breakdown</h2>
+<h3>Functionality (hidden tests) <span class="pts">62.22 / 70</span></h3>
+<table>
+<thead><tr><th>Category</th><th>Test</th><th>Pass</th></tr></thead>
+<tbody>
+<tr><td rowspan="1">Contract (loading &amp; API shape)</td><td>board_model loading, instantiation, required API, and enums</td><td>✅</td></tr>
+<tr><td rowspan="7">API behavior</td><td>setup() initial state is correct</td><td>✅</td></tr>
+<tr><td>Acceptance spawn and early movement</td><td>✅</td></tr>
+<tr><td>get_cell ASCII mapping and out-of-bounds handling</td><td>✅</td></tr>
+<tr><td>place_belt placement rules</td><td>✅</td></tr>
+<tr><td>rotate_cell rotation rules</td><td>✅</td></tr>
+<tr><td>spawn_item rules and RNG non-consumption</td><td>✅</td></tr>
+<tr><td>peek_next_kind is stable and matches the spawn</td><td>✅</td></tr>
+<tr><td rowspan="4">Movement</td><td>Straight belts move one cell per tick</td><td>✅</td></tr>
+<tr><td>Adjacent pair advances in the same tick</td><td>✅</td></tr>
+<tr><td>Three items in a loop all advance</td><td>✅</td></tr>
+<tr><td>Full loop stalls then all items miss</td><td>✅</td></tr>
+<tr><td rowspan="4">Collision / stalls</td><td>Merge to same empty cell chooses the lowest id</td><td>✅</td></tr>
+<tr><td>Head-on swap is blocked</td><td>✅</td></tr>
+<tr><td>Blocked item becomes a miss after five ticks<br><small>Details: missed=[2] misses=2</small></td><td>❌</td></tr>
+<tr><td>Stuck counter resets after movement<br><small>Details: after_move=(2, 0) has_id=false</small></td><td>❌</td></tr>
+<tr><td rowspan="5">Exit &amp; scoring</td><td>Matching exit scores and removes the item</td><td>✅</td></tr>
+<tr><td>Wrong exit becomes a miss</td><td>✅</td></tr>
+<tr><td>Two items can enter the same exit</td><td>✅</td></tr>
+<tr><td>Off-board movement becomes a miss</td><td>✅</td></tr>
+<tr><td>Exit departure frees the previous cell for a follower in the same tick</td><td>✅</td></tr>
+<tr><td rowspan="5">Splitter</td><td>Splitter alternates right-left-right</td><td>✅</td></tr>
+<tr><td>Splitter toggles are independent per splitter</td><td>✅</td></tr>
+<tr><td>Blocked splitter does not toggle</td><td>✅</td></tr>
+<tr><td>Splitter toggles on exit and off-board departure<br><small>Details: exit_case=false off_case=false</small></td><td>❌</td></tr>
+<tr><td>Splitter &quot;right&quot; is relative to entry direction</td><td>✅</td></tr>
+<tr><td rowspan="4">Spawn &amp; misses</td><td>Spawn schedule is t=1,4,7...</td><td>✅</td></tr>
+<tr><td>Blocked spawn becomes a miss and consumes RNG<br><small>Details: expected=[1, 1, 1] peek=1 r1=[] r7=[3] kind=1</small></td><td>❌</td></tr>
+<tr><td>Blocked spawn still consumes the id</td><td>✅</td></tr>
+<tr><td>At t=120, future ticks freeze the state</td><td>✅</td></tr>
+<tr><td rowspan="2">Determinism</td><td>Same seed and same operation sequence produce identical results</td><td>✅</td></tr>
+<tr><td>Spawn color sequence matches RandomNumberGenerator</td><td>✅</td></tr>
+<tr><td rowspan="1">Win path</td><td>Standard map simple controller reaches the win threshold</td><td>✅</td></tr>
+<tr><td rowspan="3">View behavior</td><td>Displayed labels have no missing glyphs</td><td>✅</td></tr>
+<tr><td>Tick advances at 0.5s interval</td><td>✅</td></tr>
+<tr><td>Mouse click places a belt</td><td>✅</td></tr>
+</tbody>
+</table>
+
+<h3>Determinism <span class="pts">10 / 10</span></h3>
+<table>
+<thead><tr><th>Item</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>Same seed and same operation sequence reproduce identical results (determinism category fully passing)</td><td class="res">✅</td></tr>
+</tbody>
+</table>
+<h3>Type quality <span class="pts">0 / 10</span></h3>
+<table>
+<thead><tr><th>Item</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>Strict type warnings (per-file untyped/unsafe treated as error): 6 × −2 (floor 0)</td><td class="res">❌</td></tr>
+</tbody>
+</table>
+<h3>Project health <span class="pts">10 / 10</span></h3>
+<table>
+<thead><tr><th>Item</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>Project import (godot --headless --import)</td><td class="res">✅ 3 / 3</td></tr>
+<tr><td>Boot smoke (headless launch of main.tscn)</td><td class="res">✅ 3 / 3</td></tr>
+<tr><td>API contract (BoardModel scene-independent load and contract tests)</td><td class="res">✅ 4 / 4</td></tr>
+</tbody>
+</table>
+</aside>
+</body>
+</html>

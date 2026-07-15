@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conveyor Courier ギャラリー — 202607_delegate_implement_bench</title>
+<meta property="og:site_name" content="godot-llm-gamebench">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Conveyor Courier ギャラリー — 202607_delegate_implement_bench">
+<meta property="og:description" content="LLM ベンチで生成された Conveyor Courier 実装をブラウザでプレイできるギャラリー。モデルごとの採点内訳つき。">
+<meta property="og:url" content="https://oubakiou.github.io/godot-llm-gamebench/">
+<meta property="og:image" content="https://oubakiou.github.io/godot-llm-gamebench/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+body{font-family:system-ui,sans-serif;margin:2rem;color:#1f2933;background:#f7f8fa}
+h1,code{overflow-wrap:anywhere}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;background:white}
+th,td{border:1px solid #d8dde3;padding:.55rem .7rem;text-align:left;vertical-align:top}
+th{background:#e9edf2}
+td.num{text-align:right;white-space:nowrap}
+td.score{text-align:right}
+a{color:#0b63ce}
+small{color:#6b7280}
+code{background:#eef1f4;padding:0 .25em;border-radius:3px}
+@media (max-width: 700px){body{margin:1rem}}
+</style>
+</head>
+<body>
+<p class="lang-switch"><a href="https://github.com/oubakiou/godot-llm-gamebench">GitHub リポジトリ</a> | <a href="en/">English</a></p>
+<h1>Conveyor Courier ギャラリー — 202607_delegate_implement_bench</h1>
+<p>ベンチで生成された Conveyor Courier 実装の Web エクスポート。モデル名のリンクから代表 run（採用 rep の総合スコア中央値）の実装をブラウザでプレイできる。</p>
+<p>参照実装（採点の基準となるお手本実装）: <a href="games/reference/index.html">プレイする</a></p>
+<nav>
+<h2>目次</h2>
+<ul>
+<li><a href="#summary">本計測サマリー</a></li>
+<li><a href="#baseline">ベースライン条件</a></li>
+<li><a href="#followup-1">追試（2026-07-11、gpt-5.6-luna の reasoning effort A/B: medium vs xhigh）</a></li>
+<li><a href="#followup-2">追試 2（2026-07-11、gdscript-quality skill × 本ベンチ: claude-sonnet-5 / claude-opus-4-8 の skill あり/なし A/B）</a></li>
+<li><a href="#followup-3">追試 3（2026-07-14、gdscript-quality skill × Cursor 実行系: composer-2.5 の skill あり/なし A/B）</a></li>
+<li><a href="#others">その他のエントリ</a></li>
+</ul>
+</nav>
+<h2 id="summary">本計測サマリー</h2>
+<p>表の数値は <code>benchmarks/202607_delegate_implement_bench/impressions.md</code> の本計測サマリー（各モデル 3 反復の採用値）からの転記。指標の定義は同ファイルの脚注を参照。</p>
+<p><small>太字のモデル名は代表 run の機能（隠しテスト）が満点（70/70）。</small></p>
+<div class="tablewrap"><table>
+<thead><tr><th>モデル</th><th>自動テストによる評価(合算)</th><th>コード品質 (sonnet評, sol評)</th><th>親費用+子費用(中央値)</th><th>所要時間(中央値)</th><th>ひとこと</th></tr></thead>
+<tbody>
+<tr><td><a href="games/claude-sonnet-5/index.html" title="代表 run: 20260705T065141Z-claude-sonnet-5-rep1"><strong>claude-sonnet-5 (Claude)</strong></a></td><td class="num">290.00</td><td>3.8 (4.3, 3.3) — rep1 のみ 5、内部の型放棄が 2/3。乖離が大きいため代表値は Fable 裁定（クロスチェック欄参照）</td><td>$0.97 + $1.30（計 $2.27、実測）</td><td class="num">8.6 分</td><td>品質首位・無事故。型警告ゼロの run を 2 回達成</td></tr>
+<tr><td><a href="games/swe-1.7/index.html" title="代表 run: 20260710T024726Z-swe-1.7-rep2"><strong>swe-1.7 (Devin)</strong></a></td><td class="num">280.06</td><td>4.1 (4.0, 4.3) — rep1 のみ無型 Dictionary へ退行</td><td>$1.41 + $0（計 $1.41、込み価格）</td><td class="num">12.5 分</td><td>swe-1.6 から +57.00 の大幅改善。旧 100 点 run は View 減点（クリック不能）で 98.06 に</td></tr>
+<tr><td><a href="games/gpt-5.5/index.html" title="代表 run: 20260705T035720Z-gpt-5.5-rep2"><strong>gpt-5.5 (Codex)</strong></a></td><td class="num">280.00</td><td>4.0 (4.3, 3.8) — rep2 のみ 5、<code>_items</code> 無型が 2/3</td><td>$1.00 + $2.34（計 $3.48、換算）</td><td class="num">5.8 分</td><td>機能は全反復満点・無事故。型警告ゼロは 1/3</td></tr>
+<tr><td><a href="games/cursor-grok-4.5/index.html" title="代表 run: 20260710T151913Z-cursor-grok-4.5-rep2"><strong>cursor-grok-4.5 (Cursor)</strong></a></td><td class="num">276.00</td><td>3.3 (3.2, 3.5) — item が typed class ⇔ 生 Dictionary で振れる</td><td>$1.25 + $0.12（計 $1.38、換算）</td><td class="num">4.8 分</td><td>最速級・最少トークン消費。View 減点ゼロで再集計 4 位へ浮上</td></tr>
+<tr><td><a href="games/devin-deepseek-v4-pro/index.html" title="代表 run: 20260705T161552Z-devin-deepseek-v4-pro-rep0"><strong>devin-deepseek-v4-pro (Devin)</strong></a></td><td class="num">270.06</td><td>3.4 (3.3, 3.5) — 生 Dictionary 運用、rep2 のみ 4</td><td>$1.53 + $2.05（計 $3.58、推測）</td><td class="num">11.1 分</td><td>機能は全反復満点だが最遅級・高コスト</td></tr>
+<tr><td><a href="games/claude-opus-4-8/index.html" title="代表 run: 20260705T074941Z-claude-opus-4-8-rep1"><strong>claude-opus-4-8 (Claude)</strong></a></td><td class="num">270.00</td><td>3.5 (3.3, 3.7) — View 層まで int 波及が 2/3</td><td>$0.93 + $1.42（計 $2.35、実測）</td><td class="num">8.4 分</td><td>子は毎回機能満点。失敗は全て親・ハーネス側</td></tr>
+<tr><td><a href="games/gpt-5.6-sol/index.html" title="代表 run: 20260710T011737Z-gpt-5.6-sol-rep0"><strong>gpt-5.6-sol (Codex)</strong></a></td><td class="num">268.06</td><td>4.2 (4.2, 4.3) — rep0 のみ <code>_items</code> 無型</td><td>$1.50 + $1.77（計 $3.10、換算）</td><td class="num">7.1 分</td><td>全反復 88〜90 で安定。terra とほぼ同点・同品質で単価は 2 倍</td></tr>
+<tr><td><a href="games/cursor-gemini-3.1-pro/index.html" title="代表 run: 20260710T122129Z-cursor-gemini-3.1-pro-rep0"><strong>cursor-gemini-3.1-pro (Cursor)</strong></a></td><td class="num">268.06</td><td>2.5 (2.8, 2.3) — 定数化しない癖が 3 ラン共通・振れ幅最大（代表値は Fable 裁定と一致）</td><td>$1.55 + $0.58（計 $2.13、換算）</td><td class="num">8.4 分</td><td>型警告の振れと停滞癖。トークン消費は Cursor 系最大</td></tr>
+<tr><td><a href="games/cursor-kimi-k2.7-code/index.html" title="代表 run: 20260710T142346Z-cursor-kimi-k2.7-code-rep0"><strong>cursor-kimi-k2.7-code (Cursor)</strong></a></td><td class="num">268.06</td><td>4.5 (4.3, 4.7) — rep2 は Dictionary[K,V] 総称まで貫徹</td><td>$1.44 + $0.16（計 $1.60、換算）</td><td class="num">10.6 分</td><td>スプリッタの癖は非再現。型規律は最上位帯を維持</td></tr>
+<tr><td><a href="games/gpt-5.4-mini/index.html" title="代表 run: 20260705T043342Z-gpt-5.4-mini-rep1"><strong>gpt-5.4-mini (Codex)</strong></a></td><td class="score">266.12<br><small>※代表 rep1 は盤面非描画（欄参照）</small></td><td>3.3 (2.8, 3.5) — 反復ごとに型後退（代表値は Fable 裁定）</td><td>$1.01 + $0.84（計 $2.04、換算）</td><td class="num">11.1 分</td><td>型警告は最少級だが遅く、決定性落ち・停滞あり</td></tr>
+<tr><td><a href="games/gpt-5.6-terra/index.html" title="代表 run: 20260710T015332Z-gpt-5.6-terra-rep2">gpt-5.6-terra (Codex)</a></td><td class="score">266.12<br><small>※代表 rep2 は矢印が豆腐表示（欄参照）</small></td><td>4.2 (4.2, 4.3) — 定数化と盤面表現が反復間で揺れる</td><td>$1.21 + $0.91（計 $2.38、換算）</td><td class="num">6.3 分</td><td>sol と同品質を約半額・より速く。効率面の有力株</td></tr>
+<tr><td><a href="games/devin-glm-5.2/index.html" title="代表 run: 20260705T052657Z-devin-glm-5.2-rep1">devin-glm-5.2 (Devin)</a></td><td class="score">266.12<br><small>※代表 rep1 はベルト向き非表示・マウス操作不能（欄参照）</small></td><td>3.8 (4.0, 3.7) — 3 ラン安定、内部 int 運用が常</td><td>$0.90 + $1.37（計 $2.28、推測）</td><td class="num">5.9 分</td><td>速くて機能面は正確。完了報告前の停滞が玉に瑕</td></tr>
+<tr><td><a href="games/composer-2.5/index.html" title="代表 run: 20260710T111008Z-composer-2.5-rep1">composer-2.5 (Cursor)</a></td><td class="score">264.28<br><small>※代表 rep1 はマウス操作不能（全ラン共通、欄参照）</small></td><td>3.8 (3.8, 3.8) — <code>_items</code> 無型 Dictionary が 3 ラン共通</td><td>$1.23 + $0.04（計 $1.29、換算）</td><td class="num">6.5 分</td><td>無事故は継続。実測で子費用は全モデル最安と判明</td></tr>
+<tr><td><a href="games/composer-2.5-fast/index.html" title="代表 run: 20260710T121305Z-composer-2.5-fast-rep2">composer-2.5-fast (Cursor)</a></td><td class="score">264.28<br><small>※代表 rep2 はマウス操作不能（全ラン共通、欄参照）</small></td><td>3.7 (3.7, 3.7) — 無型二重配列が 2/3</td><td>$1.49 + $0.26（計 $1.76、換算）</td><td class="num">7.8 分</td><td>無印と同点へ浮上。ただし再計測では無印より遅い</td></tr>
+<tr><td><a href="games/gpt-5.3-codex-spark/index.html" title="代表 run: 20260705T155807Z-gpt-5.3-codex-spark-rep0">gpt-5.3-codex-spark (Codex)</a></td><td class="num">264.17</td><td>3.6 (3.8, 3.5) — ぶれ最大（5 / 3 / 3.5）</td><td>$1.47 + 不明（計 $1.47 以上）</td><td class="num">4.5 分</td><td>速いが細部が不安定。入力トークンは gpt-5.5 比 3〜5 倍</td></tr>
+<tr><td><a href="games/gpt-5.6-luna/index.html" title="代表 run: 20260710T020817Z-gpt-5.6-luna-rep1">gpt-5.6-luna (Codex)</a></td><td class="num">250.55</td><td>3.3 (3.3, —) — 生 Dictionary 常用、rep2 のみ class 化</td><td>$1.46 + $0.49（計 $1.95、換算）</td><td class="num">7.3 分</td><td>スプリッタ退場時反転を全反復で落とす（追試 1 で effort 起因と判明、xhigh で解消）</td></tr>
+<tr><td><a href="games/swe-1.6/index.html" title="代表 run: 20260705T062110Z-swe-1.6-rep1">swe-1.6 (Devin)</a></td><td class="score">223.06<br><small>※代表 rep1 は矢印が豆腐表示（欄参照）</small></td><td>3.8 (3.7, 4.0) — rep1 のみ型が全落ち</td><td>$0.95 + $0（計 $0.95、込み価格）</td><td class="num">3.9 分</td><td>最安（込み価格）だが機能・型とも品質最下位</td></tr>
+<tr><td><a href="games/claude-haiku-4-5/index.html" title="代表 run: 20260706T005734Z-claude-haiku-4-5-rep1">claude-haiku-4-5 (Claude)</a></td><td class="score">86.11（n=1）<br><small>※代表 rep1 はマウス操作不能（欄参照）</small></td><td>2.7 (3.0, 2.5)（n=1） — 契約面も無型</td><td>$1.87 + $0.66（計 $2.53、実測）</td><td class="num">9.3 分</td><td>completed 1/7。停滞多発で信頼性最下位</td></tr>
+</tbody>
+</table></div>
+<p id="baseline">ベースライン条件（委譲プロトコルを通らない別条件のため参考値。上表とは直接比較しないこと）:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>条件</th><th>自動テストによる評価(合算)</th><th>コード品質 (sonnet評, sol評)</th><th>親費用+子費用(中央値)</th><th>所要時間(中央値)</th><th>ひとこと</th></tr></thead>
+<tbody>
+<tr><td><a href="games/fable-direct/index.html" title="代表 run: 20260705T120501Z-fable-direct-rep1"><strong>fable-direct (委譲なし)</strong></a></td><td class="num">300.00</td><td>4.6 (4.7, 4.5) — 3 ラン安定・型規律最上位</td><td>$2.62 + $0（計 $2.62、実測）</td><td class="num">5.7 分</td><td>ベースライン: 親 Fable の直接実装</td></tr>
+</tbody>
+</table></div>
+<h2 id="followup-1">追試（2026-07-11、gpt-5.6-luna の reasoning effort A/B: medium vs xhigh）</h2>
+<p>条件付き計測（A/B）のため、本計測サマリーの表とは直接比較しないこと。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>条件</th><th>自動テストによる評価(合算)</th><th>コード品質 (sonnet評, sol評)</th><th>親費用+子費用(中央値)</th><th>所要時間(中央値)</th><th>ひとこと</th></tr></thead>
+<tbody>
+<tr><td><a href="games/gpt-5.6-luna@medium/index.html" title="代表 run: 20260711T144906Z-gpt-5.6-luna_medium-rep0">gpt-5.6-luna@medium</a></td><td class="score">252.50<br><small>※代表 rep0 は矢印が豆腐表示</small></td><td>3.7 (3.7, 3.7) — rep 間振れは相変わらず大（3.0/3.5/4.5）</td><td>$1.59 + $0.71（計 $2.30、換算）</td><td class="num">8.0 分</td><td>デフォルト effort。旧配分ではラウンド 2 と同値だった</td></tr>
+<tr><td><a href="games/gpt-5.6-luna@xhigh/index.html" title="代表 run: 20260711T154221Z-gpt-5.6-luna_xhigh-rep2">gpt-5.6-luna@xhigh</a></td><td class="score">282.23<br><small>※代表 rep2 は headless 自己終了で View 3 件失権</small></td><td>3.8 (3.5, 4.2) — 警告ゼロ ×2 でも設計面は実質据え置き（代表値は Fable 裁定）</td><td>$1.34 + $1.75（計 $3.09、換算）</td><td class="num">13.0 分</td><td>Model 層テスト満点 3/3・100 点ラン 1、View 減点（豆腐・自己終了）が新たに乗る</td></tr>
+</tbody>
+</table></div>
+<h2 id="followup-2">追試 2（2026-07-11、gdscript-quality skill × 本ベンチ: claude-sonnet-5 / claude-opus-4-8 の skill あり/なし A/B）</h2>
+<p>条件付き計測（A/B）のため、本計測サマリーの表とは直接比較しないこと。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>条件</th><th>自動テストによる評価(合算)</th><th>コード品質 (sonnet評, sol評)</th><th>親費用+子費用(中央値)</th><th>所要時間(中央値)</th><th>ひとこと</th></tr></thead>
+<tbody>
+<tr><td><a href="games/claude-sonnet-5@noskill/index.html" title="代表 run: 20260711T182300Z-claude-sonnet-5_noskill-rep2"><strong>claude-sonnet-5@noskill</strong></a></td><td class="num">282.00</td><td>4.2 (4.2, 4.2) — rep2 のみ全面型付け 4.5</td><td>$1.35 + $1.41（計 $2.64、実測）</td><td class="num">9.9 分</td><td>ベースライン。本計測 290.00 から下振れ</td></tr>
+<tr><td><a href="games/claude-sonnet-5@gq/index.html" title="代表 run: 20260711T170124Z-claude-sonnet-5_gq-rep0"><strong>claude-sonnet-5@gq</strong></a></td><td class="score">298.06<br><small>※rep2 のみクリック不能</small></td><td>5.0 (5.0, 5.0) — 3 ランとも typed Dictionary まで貫徹の ◎</td><td>$1.42 + $2.03（計 $3.46、実測）</td><td class="num">12.4 分</td><td>100 / 100 / 98.06。rep2 のみ View クリック検査で減点</td></tr>
+<tr><td><a href="games/claude-opus-4-8@noskill/index.html" title="代表 run: 20260711T180334Z-claude-opus-4-8_noskill-rep1"><strong>claude-opus-4-8@noskill</strong></a></td><td class="num">270.00</td><td>3.0 (2.7, 3.3) — rep1 は無型コンテナ複合で 2.0</td><td>$1.36 + $1.35（計 $2.84、実測）</td><td class="num">9.0 分</td><td>ベースライン。本計測 270.00 と一致</td></tr>
+<tr><td><a href="games/claude-opus-4-8@gq/index.html" title="代表 run: 20260711T181350Z-claude-opus-4-8_gq-rep1"><strong>claude-opus-4-8@gq</strong></a></td><td class="num">300.00</td><td>4.0 (4.0, 4.0) — 3 ラン同型（<code>_grid: Array[int]</code> のみ型放棄）</td><td>$1.26 + $1.94（計 $3.25、実測）</td><td class="num">10.5 分</td><td>全ラン 100 点満点</td></tr>
+</tbody>
+</table></div>
+<h2 id="followup-3">追試 3（2026-07-14、gdscript-quality skill × Cursor 実行系: composer-2.5 の skill あり/なし A/B）</h2>
+<p>条件付き計測（A/B）のため、本計測サマリーの表とは直接比較しないこと。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>条件</th><th>自動テストによる評価(合算)</th><th>コード品質 (sonnet評, sol評)</th><th>親費用+子費用(中央値)</th><th>所要時間(中央値)</th><th>ひとこと</th></tr></thead>
+<tbody>
+<tr><td><a href="games/composer-2.5@noskill/index.html" title="代表 run: 20260714T051504Z-composer-2.5_noskill-rep1">composer-2.5@noskill</a></td><td class="num">268.18</td><td>3.4 (3.3, 3.5) — 内部無型コレクションは本計測と同型</td><td>$1.18 + $0.04（計 $1.23、換算）</td><td class="num">5.0 分</td><td>ベースライン。本計測 264.28 とほぼ一致</td></tr>
+<tr><td><a href="games/composer-2.5@gq/index.html" title="代表 run: 20260714T050837Z-composer-2.5_gq-rep0">composer-2.5@gq</a></td><td class="score">292.23<br><small>※マウス不能は 2/3 ランで残存</small></td><td>4.2 (4.2, 4.3) — <code>Dictionary[K, V]</code> を全ラン導入、rep2 は両判定 5.0</td><td>$1.13 + $0.06（計 $1.18、換算）</td><td class="num">6.2 分</td><td>警告 0 ×3（+24.05）。View マウス不能が残り 300 に届かず</td></tr>
+</tbody>
+</table></div>
+<h2 id="others">その他のエントリ</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Game</th><th>Model</th><th>Representative run</th><th>Score</th><th>Rep count</th><th>Status</th><th>Detail</th></tr></thead>
+<tbody>
+<tr><td><a href="games/composer-2.5@gq-pilot/index.html">composer-2.5@gq-pilot</a></td><td>composer-2.5@gq-pilot</td><td>20260714T045450Z-composer-2.5_gq-pilot-rep0</td><td>84.17</td><td>1</td><td>exported</td><td>shared engine</td></tr>
+</tbody>
+</table></div>
+</body>
+</html>
