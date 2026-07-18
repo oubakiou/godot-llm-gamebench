@@ -33,6 +33,13 @@ skills-lock.json
 # ラン成果物（session id やローカルパスを含む生データ。集計レポートのみ手動でコミットする）
 benchmarks/*/runs/
 
+# 禁輸（embargo）: 次ラウンドの未計測資産は計測完了まで commit しない
+# （bench_common_design.md「ラン間・ラウンド間のカンニング防止」参照）。
+# 課題名自体が秘匿対象のため個別名は書かず、公開済み課題だけを whitelist する
+docs/embargo/
+benchmarks/tasks/*
+!benchmarks/tasks/conveyor-courier/
+
 # Godot エディタキャッシュ（機体ローカルの実行パス等を含む生成物）
 **/.godot/
 
