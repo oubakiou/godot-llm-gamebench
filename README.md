@@ -9,7 +9,7 @@
 
 ## Overview
 
-A parent agent (Fable on Claude Code) delegates a Godot 4.x + typed GDScript implementation task to child models (Codex / Devin / Cursor / Claude) through the [`delegate-implement` skill](https://github.com/oubakiou/delegate-skills), one run per model per repetition. Each run is scored by a headless grader against hidden tests, and its wall-clock time, round trips, and token cost are recorded.
+A parent agent (Fable on Claude Code) delegates a Godot 4.x + typed GDScript implementation task to child models (Codex / Devin / Cursor / Claude) through the [`delegate-implement` skill](https://github.com/oubakiou/delegate-skills), one run per model per repetition. Each run is scored by a headless grader against hidden tests, and its wall-clock time, round trips, and token cost are recorded. The delegate-skills mechanism itself is introduced in [Don't make the expensive model do everything — "delegate-skills", a casual multi-model setup built on standard features (skills)](https://dev.to/kiou_ouba_afbd120335456f3/dont-make-the-expensive-model-do-everything-delegate-skills-a-casual-multi-model-setup-built-on-1c9j).
 
 ## What gets measured
 
@@ -24,9 +24,9 @@ See [docs/design/delegate_implement_bench_design.md](docs/design/delegate_implem
 
 ### 202607_delegate_implement_bench (July 2026)
 
-#### 📖 Article: [Don't make the expensive model do everything — "delegate-skills", a casual multi-model setup built on standard features (skills)](https://dev.to/kiou_ouba_afbd120335456f3/dont-make-the-expensive-model-do-everything-delegate-skills-a-casual-multi-model-setup-built-on-1c9j)
+#### 📖 Article: [Which model should your agent outsource to? Benchmarking 18 CLI child models on the same Godot game task](https://dev.to/kiou_ouba_afbd120335456f3/which-model-should-your-agent-outsource-to-benchmarking-18-cli-child-models-on-the-same-godot-game-pa9)
 
-The article introducing the delegate-skills mechanism this benchmark measures.
+The blog post covering this round's results and follow-ups.
 
 #### 🎮 Gallery: [Play the games each model implemented, in your browser](https://oubakiou.github.io/godot-llm-gamebench/en/)
 
